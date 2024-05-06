@@ -1,17 +1,57 @@
+"""
+    abstract type Params end
+
+Abstract type representing parameters for the QCNN.
+
+"""
 abstract type Params end
 
+"""
+    Base.@kwdef mutable struct GenericParams{NN<:Integer, CC<:ChainBlock, TT<:AbstractVector{T} where T<:Real} <:Params
+
+Defines parameters for a quantum circuit without translational invariance.
+
+## Fields
+- `n::NN`: Dimension of the quantum register (must be a power of 2).
+- `circ::CC`: Circuit structure of the QCNN.
+- `params::TT = Float64[]`: Vector of parameters, initialized to an empty vector of Float64 values.
+
+"""
 Base.@kwdef mutable struct GenericParams{NN<:Integer, CC<:ChainBlock, TT<:AbstractVector{T} where T<:Real} <:Params
     n::NN
     circ::CC
     params::TT = Float64[]
 end
 
+"""
+    Base.@kwdef mutable struct InvariantParams{NN<:Integer, CC<:ChainBlock, TT<:AbstractVector{T} where T<:Real} <:Params
+
+Defines parameters for a quantum circuit with translational invariance.
+
+## Fields
+- `n::NN`: Dimension of the quantum register (must be a power of 2).
+- `circ::CC`: Circuit structure of the QCNN.
+- `params::TT = Float64[]`: Vector of parameters, initialized to an empty vector of Float64 values.
+
+"""
 Base.@kwdef mutable struct InvariantParams{NN<:Integer, CC<:ChainBlock, TT<:AbstractVector{T} where T<:Real} <:Params
     n::NN
     circ::CC
     params::TT = Float64[]
 end
 
+"""
+    initialize_params(p::GenericParams)
+
+Initialize parameters for a quantum circuit without translational invariance.
+
+## Arguments
+- `p::GenericParams`: Parameters object containing circuit information.
+
+## Errors
+- Throws an error if the register dimension is not a power of 2.
+
+"""
 #initial params (no translational invariance). Take in a seed for reproducibility
 function initialize_params(p::GenericParams)
     !ispow2(p.n) ? error("The register dimension has to be a power of 2") : nothing
@@ -19,22 +59,56 @@ function initialize_params(p::GenericParams)
     p.params = 2pi * rand(n_params)
 end
 
-#initial params (no translational invariance). Take in a seed for reproducibility
+"""
+    initialize_params(p::InvariantParams)
+
+Initialize parameters for a quantum circuit with translational invariance.
+
+## Arguments
+- `p::InvariantParams`: Parameters object containing circuit information.
+
+## Errors
+- Throws an error if the register dimension is not a power of 2.
+
+"""
 function initialize_params(p::InvariantParams)
     !ispow2(p.n) ? error("The register dimension has to be a power of 2") : nothing
     n_params = trunc(Int, 2*log2(p.n)) # extended vector dim is trunc(Int, 2*sum([2^i for i in 1:log2(n)]))
     p.params = 2pi * rand(n_params)
 end
 
-# expand unique translational invariant parameters to full vector
+"""
+    expand_params(p::InvariantParams)
+
+Expand unique translational invariant parameters to a full vector.
+
+## Arguments
+- `p::InvariantParams`: Parameters object containing circuit information.
+
+## Returns
+A vector representing expanded parameters.
+
+"""
 function expand_params(p::InvariantParams)
     n_params = length(p.params) # extended vector dim is trunc(Int, 2*sum([2^i for i in 1:log2(n)]))
     p_rev = reverse(p.params)
     return vcat([reverse(repeat(p_rev[1+2i:2+2i], 2*2^i)) for i in (n_params÷2)-1:-1:0]...)
 end
 
-# reduce vector of parameters to unique set (sum of corresponding parameters in the expanded version)
-# used in full_grad evaluation
+"""
+    reduce_params(n, params)
+
+Reduce a vector of parameters to the unique set of parameters in the translational invariant QCNN. Performs the 
+sum of the corresponding parameters in the circuit. Used in eval_full_grad.
+
+## Arguments
+- `n`: Dimension of the quantum register.
+- `params`: Vector of "extended" parameters.
+
+## Returns
+A vector of unique parameters.
+
+"""
 function reduce_params(n, params)
     layers = [trunc(Int, 2*sum([2^jj for jj in 1:ii])) for ii in 0:log2(n)]
     res = []

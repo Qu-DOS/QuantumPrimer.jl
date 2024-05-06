@@ -1,8 +1,31 @@
-#Ansatz for convolutional layer (not parameterized yet) - used Rys to keep ansatz real - adapted from [arXiv:2108.00661v2]
-#Can change this ansatz and code should still work
+"""
+    conv_Ry(n, i, j)
+
+Ansatz for the convolutional layer. Use Ry gate to keep ansatz real (adapted from arxiv:2108.00661v2).
+
+## Arguments
+- `n`: Dimension of the quantum register.
+- `i`: Index of the first qubit.
+- `j`: Index of the second qubit.
+
+## Returns
+A quantum circuit implementing convolutional layers with Ry gates.
+
+"""
 conv_Ry(n, i, j) = chain(n, put(i=>Ry(0)), put(j=>Ry(0)), control(i,j=>X))
 
-#Should work fine for all n, but definitely = 2^a (a integer), e.g. n=8
+"""
+    build_QCNN(n)
+
+Build a quantum circuit for a Quantum Convolutional Neural Network (QCNN).
+
+## Arguments
+- `n`: Dimension of the quantum register.
+
+## Returns
+A quantum circuit representing the QCNN.
+
+"""
 function build_QCNN(n)
     circ = chain(n)
     n_q = n
