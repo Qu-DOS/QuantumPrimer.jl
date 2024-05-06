@@ -1,19 +1,14 @@
 """
-    Base.@kwdef mutable struct GenericParams{NN<:Integer, CC<:ChainBlock, TT<:AbstractVector{T} where T<:Real} <:Params
+    struct Data{S <: Vector{SS} where SS <: ArrayReg, L <: Vector{LL} where LL <: Real}
 
-Defines parameters for a quantum circuit without translational invariance.
+Structure representing input data for the model.
 
 ## Fields
-- `n::NN`: Dimension of the quantum register (must be a power of 2).
-- `circ::CC`: Circuit structure of the QCNN.
-- `params::TT = Float64[]`: Vector of parameters, initialized to an empty vector of Float64 values.
+- `s::S`: Input states.
+- `l::L`: Labels.
 
 """
-struct Data{S <: Vector{SS} where SS <: ArrayReg, T <: Vector{TT} where TT <: Real}
-    # train
-    s1::S
-    l1::T
-    # test
-    s2::S
-    l2::T
+struct Data{S <: Vector{SS} where SS <: ArrayReg, L <: Vector{LL} where LL <: Real}
+    s::S
+    l::L
 end
