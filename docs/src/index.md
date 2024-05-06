@@ -1,14 +1,14 @@
 ```@meta
-CurrentModule = qcomp
+CurrentModule = QComp
 ```
 
-# qcomp
+# QComp
 
-Documentation for [qcomp](https://github.com/Qu-DOS/qcomp.jl).
+Documentation for [QComp](https://github.com/Qu-DOS/QComp.jl).
 
 ```@index
 ```
 
 ```@autodocs
-Modules = [qcomp]
+Modules = [QComp]
 ```

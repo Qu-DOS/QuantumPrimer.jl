@@ -1,4 +1,4 @@
-module qcomp
+module QComp
 
 using Yao
 using Random

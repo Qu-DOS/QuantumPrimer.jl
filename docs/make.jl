@@ -1,14 +1,14 @@
-using qcomp
+using QComp
 using Documenter
 
-DocMeta.setdocmeta!(qcomp, :DocTestSetup, :(using qcomp); recursive=true)
+DocMeta.setdocmeta!(QComp, :DocTestSetup, :(using QComp); recursive=true)
 
 makedocs(;
-    modules=[qcomp],
+    modules=[QComp],
     authors="Stefano Scali <scali.stefano@gmail.com> and contributors",
-    sitename="qcomp.jl",
+    sitename="QComp.jl",
     format=Documenter.HTML(;
-        canonical="https://Qu-DOS.github.io/qcomp.jl",
+        canonical="https://Qu-DOS.github.io/QComp.jl",
         edit_link="main",
         assets=String[],
     ),
@@ -18,6 +18,6 @@ makedocs(;
 )
 
 deploydocs(;
-    repo="github.com/Qu-DOS/qcomp.jl",
+    repo="github.com/Qu-DOS/QComp.jl",
     devbranch="main",
 )

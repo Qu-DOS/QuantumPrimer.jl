@@ -1,6 +1,6 @@
-using qcomp
+using QComp
 using Test
 
-@testset "qcomp.jl" begin
+@testset "QComp.jl" begin
     # Write your tests here.
 end
