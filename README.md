@@ -6,7 +6,7 @@
 A library to collect and standardize QML routines.
 
 # workflow
-1. Open a branch
-2. Work on the branch
-3. When implemented the feature, open a pull request to merge with main
+1. Open a branch with a name suggesting the feature that is being implemented, e.g. "qcnn-invariant"
+2. Work on the branch to implement the feature
+3. Once the feature is complete, open a pull request to merge with main and WAIT for someone to check the pull request
 4. Do not enforce any merge, ever!
