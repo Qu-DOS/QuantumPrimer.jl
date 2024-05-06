@@ -1,30 +1,17 @@
 #evaluate classification accuracy of model - with or without sigmoid
 function test_model(states, labels, p::Params, sig)
-    suc = 0
     preds = []
     suc_inds = []
     for i in eachindex(states)
         loss = eval_loss(states[i], p)
         model_pred = 0
-        true_pred = labels[i] #(assuming binary labels ±1)
         fx = 0
-        if sig == true
-            fx = 2*sigmoid(10*loss)-1
-        else
-            fx = loss
-        end
-        if fx>0 #binary classification determined by sign of cost function
-            model_pred = 1
-        else
-            model_pred = -1
-        end
+        sig==true ? fx=2*sigmoid(10*loss)-1 : fx=loss
+        fx>0 ? model_pred=1 : model_pred=-1 # binary classification determined by sign of cost function
         push!(preds, fx)
-        if model_pred ≈ true_pred
-            suc += 1
-            push!(suc_inds, i)
-        end
+        model_pred≈labels[i] ? push!(suc_inds, i) : nothing
     end
-    suc_rate = suc/length(states)
+    suc_rate = length(suc_inds)/length(states)
     return preds, suc_rate, suc_inds
 end
 
