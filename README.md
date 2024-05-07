@@ -3,7 +3,7 @@
 [![Build Status](https://github.com/Qu-DOS/QComp.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/Qu-DOS/QComp.jl/actions/workflows/CI.yml?query=branch%3Amain)
 
 # QComp.jl
-A library to collect and standardize QML routines.
+A library to collect and standardize quantum computing routines.
 
 # Run minimal working examples
 Find Julia notebooks of minimal working examples in the folder `notebooks`.
