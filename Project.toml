@@ -3,6 +3,9 @@ uuid = "926c8323-0664-4c0b-b4df-2110e80a50b0"
 authors = ["Stefano Scali <scali.stefano@gmail.com> and contributors"]
 version = "0.0.1"
 
+[deps]
+Yao = "5872b779-8223-5990-8dd0-5abbb0748c8c"
+
 [compat]
 julia = "1.7"
 
