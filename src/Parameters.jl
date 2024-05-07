@@ -76,7 +76,7 @@ function initialize_params(p::InvariantParams)
     !ispow2(p.n) ? error("The register dimension has to be a power of 2") : nothing
     #n_params = trunc(Int, 2*log2(p.n)) # extended vector dim is trunc(Int, 2*sum([2^i for i in 1:log2(n)]))
     n_layers=ceil(Int,log2(p.n))
-    n_params = trunc(Int,nparameters(p.circ)/nparameters(p.ansatz(p.n,1,2))*n_layers)
+    n_params = trunc(Int,nparameters(p.ansatz(p.n,1,2))*n_layers)
     p.params = 2pi * rand(n_params)
 end
 
@@ -115,6 +115,11 @@ A vector of unique parameters.
 function reduce_params(n, params,p::InvariantParams)
     n_layers=ceil(Int,log2(n))
     active_qs = map(i->ceil(Int,n/2^i),0:n_layers-1)
+    res=[]
+    for i=1:n_layers
+        active_pms=params[sum(active_qs[1:i-1])*nparameters(p.ansatz(n,1,2))+1:sum(active_qs[1:i])*nparameters(p.ansatz(n,1,2))]
+        [push!(res,sum(active_pms[j:nparameters(p.ansatz(n,1,2)):j+nparameters(p.ansatz(n,1,2))*(active_qs[i]-1)])) for j=1:nparameters(p.ansatz(n,1,2))]
+    end
     #layers = [trunc(Int, 2*sum([2^jj for jj in 1:ii])) for ii in 0:log2(n)]
     #res = []
     #vcat([p.params[(i-1)*active_qs[i]*nparameters(p.ansatz(p.n,1,2))+1:(i-1)*active_qs[i]*nparameters(p.ansatz(p.n,1,2))+nparameters(p.ansatz(p.n,1,2))] for i in 1:n_layers]...)
@@ -127,6 +132,6 @@ function reduce_params(n, params,p::InvariantParams)
     #     tmp = p_rev[2+layers[i]:2:layers[i+1]]
     #     push!(res, sum(tmp/length(tmp)))
     # end
-    # return reverse(res)
-    return vcat([params[sum(active_qs[1:i-1])*nparameters(p.ansatz(n,1,2))+1:sum(active_qs[1:i-1])*nparameters(p.ansatz(n,1,2))+nparameters(p.ansatz(n,1,2))] for i in 1:n_layers]...)
+    return res
+    #return vcat([params[sum(active_qs[1:i-1])*nparameters(p.ansatz(n,1,2))+1:sum(active_qs[1:i-1])*nparameters(p.ansatz(n,1,2))+nparameters(p.ansatz(n,1,2))] for i in 1:n_layers]...)
 end

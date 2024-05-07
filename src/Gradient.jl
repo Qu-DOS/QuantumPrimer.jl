@@ -96,5 +96,5 @@ function eval_full_grad(d::Data, p::InvariantParams, sig)
         end
     end
     total_grads = 2/length(d.s)*sum(all_grads)
-    return reduce_params(p.n, total_grads)
+    return reduce_params(p.n, total_grads,p)
 end
