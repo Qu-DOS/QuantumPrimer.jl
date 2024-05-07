@@ -67,6 +67,6 @@ jobs:
         shell: julia --project=docs --color=yes {0}
         run: |
           using Documenter: DocMeta, doctest
-          using qcomp
-          DocMeta.setdocmeta!(qcomp, :DocTestSetup, :(using qcomp); recursive=true)
-          doctest(qcomp)
+          using QComp
+          DocMeta.setdocmeta!(QComp, :DocTestSetup, :(using QComp); recursive=true)
+          doctest(QComp)
