@@ -34,9 +34,10 @@ Defines parameters for a quantum circuit with translational invariance.
 - `params::TT = Float64[]`: Vector of parameters, initialized to an empty vector of Float64 values.
 
 """
-Base.@kwdef mutable struct InvariantParams{NN<:Integer, CC<:ChainBlock, TT<:AbstractVector{T} where T<:Real} <:Params
+Base.@kwdef mutable struct InvariantParams{NN<:Integer, CC<:ChainBlock, AA<:Function, TT<:AbstractVector{T} where T<:Real} <:Params
     n::NN
     circ::CC
+    ansatz::AA
     params::TT = Float64[]
 end
 
@@ -73,7 +74,9 @@ Initialize parameters for a quantum circuit with translational invariance.
 """
 function initialize_params(p::InvariantParams)
     !ispow2(p.n) ? error("The register dimension has to be a power of 2") : nothing
-    n_params = trunc(Int, 2*log2(p.n)) # extended vector dim is trunc(Int, 2*sum([2^i for i in 1:log2(n)]))
+    #n_params = trunc(Int, 2*log2(p.n)) # extended vector dim is trunc(Int, 2*sum([2^i for i in 1:log2(n)]))
+    n_layers=ceil(Int,log2(p.n))
+    n_params = trunc(Int,nparameters(p.ansatz(p.n,1,2))*n_layers)
     p.params = 2pi * rand(n_params)
 end
 
@@ -90,9 +93,9 @@ A vector representing expanded parameters.
 
 """
 function expand_params(p::InvariantParams)
-    n_params = length(p.params) # extended vector dim is trunc(Int, 2*sum([2^i for i in 1:log2(n)]))
-    p_rev = reverse(p.params)
-    return vcat([reverse(repeat(p_rev[1+2i:2+2i], 2*2^i)) for i in (n_params÷2)-1:-1:0]...)
+    n_layers = ceil(Int, log2(p.n))
+    active_qs = map(i->ceil(Int, p.n/2^i), 0:n_layers-1)
+    return vcat([repeat(p.params[(i-1)*nparameters(p.ansatz(p.n, 1, 2))+1:i*nparameters(p.ansatz(p.n, 1, 2))], active_qs[i]) for i in 1:n_layers]...)
 end
 
 """
@@ -109,15 +112,16 @@ sum of the corresponding parameters in the circuit. Used in eval_full_grad.
 A vector of unique parameters.
 
 """
-function reduce_params(n, params)
-    layers = [trunc(Int, 2*sum([2^jj for jj in 1:ii])) for ii in 0:log2(n)]
+function reduce_params(p::InvariantParams, vect)
+    n_layers = ceil(Int, log2(p.n))
+    active_qs = map(i->ceil(Int, p.n/2^i), 0:n_layers-1)
+    n_ansatz = nparameters(p.ansatz(p.n, 1, 2))
     res = []
-    p_rev = reverse(params)
-    for i in 1:trunc(Int, log2(n))
-        tmp = p_rev[1+layers[i]:2:layers[i+1]]
-        push!(res, sum(tmp/length(tmp)))
-        tmp = p_rev[2+layers[i]:2:layers[i+1]]
-        push!(res, sum(tmp/length(tmp)))
+    for i in 1:n_layers
+        active_pms = vect[sum(active_qs[1:i-1])*n_ansatz+1:sum(active_qs[1:i])*n_ansatz]
+        for j in 1:n_ansatz
+            push!(res, sum(active_pms[j:n_ansatz:j+n_ansatz*(active_qs[i]-1)]))
+        end
     end
-    return reverse(res)
+    return res
 end
