@@ -93,9 +93,9 @@ A vector representing expanded parameters.
 
 """
 function expand_params(p::InvariantParams)
-    n_layers=ceil(Int,log2(p.n))
-    active_qs = map(i->ceil(Int,p.n/2^i),0:n_layers-1)
-    return vcat([repeat(p.params[(i-1)*nparameters(p.ansatz(p.n,1,2))+1:i*nparameters(p.ansatz(p.n,1,2))],active_qs[i]) for i in 1:n_layers]...)
+    n_layers = ceil(Int, log2(p.n))
+    active_qs = map(i->ceil(Int, p.n/2^i), 0:n_layers-1)
+    return vcat([repeat(p.params[(i-1)*nparameters(p.ansatz(p.n, 1, 2))+1:i*nparameters(p.ansatz(p.n, 1, 2))], active_qs[i]) for i in 1:n_layers]...)
 end
 
 """
@@ -112,26 +112,16 @@ sum of the corresponding parameters in the circuit. Used in eval_full_grad.
 A vector of unique parameters.
 
 """
-function reduce_params(n, params,p::InvariantParams)
-    n_layers=ceil(Int,log2(n))
-    active_qs = map(i->ceil(Int,n/2^i),0:n_layers-1)
-    res=[]
-    for i=1:n_layers
-        active_pms=params[sum(active_qs[1:i-1])*nparameters(p.ansatz(n,1,2))+1:sum(active_qs[1:i])*nparameters(p.ansatz(n,1,2))]
-        [push!(res,sum(active_pms[j:nparameters(p.ansatz(n,1,2)):j+nparameters(p.ansatz(n,1,2))*(active_qs[i]-1)])) for j=1:nparameters(p.ansatz(n,1,2))]
+function reduce_params(p::InvariantParams, vect)
+    n_layers = ceil(Int, log2(p.n))
+    active_qs = map(i->ceil(Int, p.n/2^i), 0:n_layers-1)
+    n_ansatz = nparameters(p.ansatz(p.n, 1, 2))
+    res = []
+    for i in 1:n_layers
+        active_pms = vect[sum(active_qs[1:i-1])*n_ansatz+1:sum(active_qs[1:i])*n_ansatz]
+        for j in 1:n_ansatz
+            push!(res, sum(active_pms[j:n_ansatz:j+n_ansatz*(active_qs[i]-1)]))
+        end
     end
-    #layers = [trunc(Int, 2*sum([2^jj for jj in 1:ii])) for ii in 0:log2(n)]
-    #res = []
-    #vcat([p.params[(i-1)*active_qs[i]*nparameters(p.ansatz(p.n,1,2))+1:(i-1)*active_qs[i]*nparameters(p.ansatz(p.n,1,2))+nparameters(p.ansatz(p.n,1,2))] for i in 1:n_layers]...)
-    # p_rev = reverse(params)
-    # for i in 1:n_layers
-    #     push!(res,p.params[1])
-    # for i in 1:trunc(Int, log2(n))
-    #     tmp = p_rev[1+layers[i]:2:layers[i+1]]
-    #     push!(res, sum(tmp/length(tmp)))
-    #     tmp = p_rev[2+layers[i]:2:layers[i+1]]
-    #     push!(res, sum(tmp/length(tmp)))
-    # end
     return res
-    #return vcat([params[sum(active_qs[1:i-1])*nparameters(p.ansatz(n,1,2))+1:sum(active_qs[1:i-1])*nparameters(p.ansatz(n,1,2))+nparameters(p.ansatz(n,1,2))] for i in 1:n_layers]...)
 end
