@@ -1,4 +1,30 @@
-W(a) = chain(X,Ry(-2asin(a))) #Signal rotation operator
+"""
+    W(a)
+
+Build the signal processing operator.
+
+## Arguments
+- `a`: Angle parameter.
+
+## Returns
+Signal rotation operator.
+
+"""
+W(a) = chain(X,Ry(-2asin(a)))
+
+
+"""
+    S(phi)
+
+Build the signal processing operator.
+
+## Arguments
+- `phi`: Phase angle.
+
+## Returns
+Rotation gate over Rz.
+
+"""
 S(phi) = Rz(-2(phi)) 
 
 """

@@ -18,9 +18,10 @@ include("QSP.jl");
 
 # exports QCNN
 export Data, Params, GenericParams, InvariantParams, initialize_params, expand_params, reduce_params
-export build_QCNN, test_model, train_test_model
+export eval_grad, eval_full_grad, sigmoid, eval_loss, eval_full_loss
+export conv_Ry, build_QCNN, test_model, train_test_model
 
 # exports QSP
-export loss, eval_Usp, block_encode2, QSVT_square
+export W, S, Usp, eval_Usp, loss, pcp, block_encode2, QSVT_square
 
 end

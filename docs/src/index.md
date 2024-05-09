@@ -1,14 +1,8 @@
-```@meta
-CurrentModule = QComp
-```
-
-# QComp
-
+# QComp documentation
 Documentation for [QComp](https://github.com/Qu-DOS/QComp.jl).
 
-```@index
+```@contents
 ```
 
-```@autodocs
-Modules = [QComp]
+```@index
 ```
