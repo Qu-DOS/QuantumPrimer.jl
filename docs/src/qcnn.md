@@ -31,6 +31,8 @@ reduce_params
 ## QCNN
 ```@docs
 conv_Ry
+conv_Ry2
+conv_SU4
 build_QCNN
 ```
 
