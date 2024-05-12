@@ -74,9 +74,8 @@ Initialize parameters for a quantum circuit with translational invariance.
 """
 function initialize_params(p::InvariantParams)
     !ispow2(p.n) ? error("The register dimension has to be a power of 2") : nothing
-    #n_params = trunc(Int, 2*log2(p.n)) # extended vector dim is trunc(Int, 2*sum([2^i for i in 1:log2(n)]))
-    n_layers=ceil(Int,log2(p.n))
-    n_params = trunc(Int,nparameters(p.ansatz(p.n,1,2))*n_layers)
+    n_layers = ceil(Int,log2(p.n))
+    n_params = trunc(Int, nparameters(p.ansatz(p.n, 1, 2)) * n_layers)
     p.params = 2pi * rand(n_params)
 end
 
@@ -94,8 +93,8 @@ A vector representing expanded parameters.
 """
 function expand_params(p::InvariantParams)
     n_layers = ceil(Int, log2(p.n))
-    active_qs = map(i->ceil(Int, p.n/2^i), 0:n_layers-1)
-    return vcat([repeat(p.params[(i-1)*nparameters(p.ansatz(p.n, 1, 2))+1:i*nparameters(p.ansatz(p.n, 1, 2))], active_qs[i]) for i in 1:n_layers]...)
+    active_qubits = map(i->ceil(Int, p.n/2^i), 0:n_layers-1)
+    return vcat([repeat(p.params[(i-1)*nparameters(p.ansatz(p.n, 1, 2))+1:i*nparameters(p.ansatz(p.n, 1, 2))], active_qubits[i]) for i in 1:n_layers]...)
 end
 
 """
@@ -114,13 +113,13 @@ A vector of unique parameters.
 """
 function reduce_params(p::InvariantParams, vect)
     n_layers = ceil(Int, log2(p.n))
-    active_qs = map(i->ceil(Int, p.n/2^i), 0:n_layers-1)
+    active_qubits = map(i->ceil(Int, p.n/2^i), 0:n_layers-1)
     n_ansatz = nparameters(p.ansatz(p.n, 1, 2))
     res = []
     for i in 1:n_layers
-        active_pms = vect[sum(active_qs[1:i-1])*n_ansatz+1:sum(active_qs[1:i])*n_ansatz]
+        active_params = vect[sum(active_qubits[1:i-1])*n_ansatz+1 : sum(active_qubits[1:i])*n_ansatz]
         for j in 1:n_ansatz
-            push!(res, sum(active_pms[j:n_ansatz:j+n_ansatz*(active_qs[i]-1)]))
+            push!(res, sum(active_params[j:n_ansatz:j+n_ansatz*(active_qubits[i]-1)]))
         end
     end
     return res
