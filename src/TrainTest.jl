@@ -31,7 +31,7 @@ function test_model(d::Data, p::Params, sig)
 end
 
 """
-    train_test_model(d1::Data, d2::Data, p::Params, iters, sig, lr; output=false)
+    train_test_model(d1::Data, d2::Data, p::Params, iters, sig; output=false)
 
 Train and test the model, outputting final predictions and train/test accuracy.
 
@@ -41,7 +41,6 @@ Train and test the model, outputting final predictions and train/test accuracy.
 - `p::Params`: Initial model parameters.
 - `iters`: Number of training iterations.
 - `sig`: Boolean indicating whether to use sigmoid activation.
-- `lr`: Learning rate for optimization.
 - `output`: Boolean indicating whether to output intermediate training information.
 
 ## Returns
@@ -53,8 +52,8 @@ Train and test the model, outputting final predictions and train/test accuracy.
 - `te_preds`: Predictions on testing data.
 
 """
-function train_test_model(d1::Data, d2::Data, p::Params, iters, sig, lr; output=false)
-    opt = Optimisers.setup(Optimisers.ADAM(lr), p.params)
+function train_test_model(d1::Data, d2::Data, p::Params, iters, optim, sig; output=false)
+    opt = Optimisers.setup(optim, p.params)
     loss_track = zeros(0)
     tr_track = zeros(0)
     te_track = zeros(0)
