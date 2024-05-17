@@ -52,16 +52,16 @@ function conv_SU4(n, i, j)
 end
 
 """
-    build_QCNN(n;anz=conv_Ry)
+    build_QCNN(n; ansatz=conv_Ry)
 
-Build a quantum circuit for a Quantum Convolutional Neural Network (QCNN).
+Build a quantum circuit for a Quantum Convolutional Neural Network (QCNN) with a given ansatz.
 
 ## Arguments
 - `n`: Dimension of the quantum register.
-- `anz`: Convolutional ansatz
+- `ansatz`: Convolutional ansatz
 
 ## Returns
-A quantum circuit representing the QCNN.
+A quantum circuit representing the QCNN. Plot with YaoPlots.plot() to visualize.
 
 """
 function build_QCNN(n; ansatz=conv_Ry)
