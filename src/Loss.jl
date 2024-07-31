@@ -1,72 +1,23 @@
-"""
-    sigmoid(x)
-
-Compute the sigmoid function.
-
-## Arguments
-- `x`: Input value.
-
-## Returns
-The sigmoid of the input value.
-
-"""
 sigmoid(x) = 1/(1+exp(-x))
 
-"""
-    eval_loss(state, p::GenericParams)
-
-Evaluate the loss of a model (with no invariance) applied to a state.
-
-## Arguments
-- `state`: Input state.
-- `p::GenericParams`: Model parameters.
-
-## Returns
-The loss value.
-
-"""
-function eval_loss(state, p::GenericParams)
+function eval_loss(states::Tuple{T, T} where T<:ArrayReg, p::GenericParams)
+    state1, state2 = states
     circ = p.circ
     dispatch!(circ, p.params)
-    cost = sum(chain(p.n, put(1=>Z))) #Z gate on first qubit
-    return real(expect(cost, copy(state)|>circ)) #copy so that actual state isn't affected
+    state1_transformed = copy(state1) |> circ
+    state2_transformed = copy(state2) |> circ
+    loss = destructive_swap_test(state1_transformed, state2_transformed)
+    return loss
 end
 
-"""
-    eval_loss(state, p::InvariantParams)
-
-Evaluate the loss of a translational invariant model applied to a state.
-
-## Arguments
-- `state`: Input state.
-- `p::InvariantParams`: Model parameters.
-
-## Returns
-The loss value.
-
-"""
-function eval_loss(state, p::InvariantParams)
+function eval_loss(state, p::AbstractParams)
     circ = p.circ
     dispatch!(circ, expand_params(p))
     cost = sum(chain(p.n, put(1=>Z))) #Z gate on first qubit
     return real(expect(cost, copy(state)|>circ)) #copy so that actual state isn't affected
 end
 
-"""
-    eval_full_loss(d::Data, p::Params, sig)
-
-Evaluate the full mean squared error (MSE) loss of a model on input data.
-
-## Arguments
-- `d::Data`: Input data and labels.
-- `p::Params`: Model parameters.
-- `sig`: Boolean indicating whether to use sigmoid activation. 
-
-## Returns
-The total mean squared error loss.
-
-"""
-function eval_full_loss(d::Data, p::Params, sig)
+function eval_full_loss(d::Union{Data, DataSiamese}, p::AbstractParams, sig)
     total_loss = 0
     for i in eachindex(d.s)
         loss = eval_loss(d.s[i], p)

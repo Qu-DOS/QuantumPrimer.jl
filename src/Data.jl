@@ -1,14 +1,11 @@
-"""
-    struct Data{S <: Vector{SS} where SS <: ArrayReg, L <: Vector{LL} where LL <: Real}
+abstract type AbstractData end
 
-Structure representing input data for the model.
+struct Data{S <: Vector{SS} where SS <: ArrayReg, L <: Vector{LL} where LL <: Real} <: AbstractData
+    s::S
+    l::L
+end
 
-## Fields
-- `s::S`: Input states.
-- `l::L`: Labels.
-
-"""
-struct Data{S <: Vector{SS} where SS <: ArrayReg, L <: Vector{LL} where LL <: Real}
+struct DataSiamese{S <: Vector{Tuple{SS}} where SS <: ArrayReg, L <: Vector{LL} where LL <: Real} <: AbstractData
     s::S
     l::L
 end
