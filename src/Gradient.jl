@@ -1,100 +1,43 @@
-"""
-    eval_grad(state, p::GenericParams)
-
-Compute the gradient of the cost function for a given state.
-
-## Arguments
-- `state`: Input state.
-- `p::GenericParams`: Model parameters.
-
-## Returns
-The gradient of the cost function.
-
-"""
-function eval_grad(state, p::GenericParams)
-    circ = p.circ
-    dispatch!(circ, p.params)
-    cost = sum(chain(p.n, put(1=>Z))) #Z gate on first qubit
-    _, grads = expect'(cost, copy(state)=>circ)
+function eval_grad(state::ArrayReg, model::AbstractModel)
+    circ = model.circ
+    dispatch!(circ, expand_params(model))
+    _, grads = expect'(model.cost(model.n), copy(state)=>circ)
     return grads
 end
 
-"""
-    eval_grad(state, p::InvariantParams)
-
-Compute the gradient of the cost function for a given state with parameters with translational invariance.
-
-## Arguments
-- `state`: Input state.
-- `p::InvariantParams`: Model parameters.
-
-## Returns
-The gradient of the cost function.
-
-"""
-function eval_grad(state, p::InvariantParams)
-    circ = p.circ
-    dispatch!(circ, expand_params(p))
-    cost = sum(chain(p.n, put(1=>Z))) #Z gate on first qubit
-    _, grads = expect'(cost, copy(state)=>circ)
+# uses parameter-shift rule (or finite difference if epsilon!=π/2) to evaluate the gradient 
+function eval_grad(state::NTuple{2, ArrayReg}, model::AbstractModel; epsilon=π/2)
+    state1, state2 = state
+    circ = model.circ
+    p_expanded = expand_params(model)
+    p_plus = deepcopy(p_expanded)
+    p_minus = deepcopy(p_expanded)
+    grads = similar(p_expanded)
+    for i in eachindex(p_expanded)
+        p_plus[i] += epsilon
+        p_minus[i] -= epsilon
+        dispatch!(circ, p_plus)
+        cost_plus = model.cost(copy(state1) |> circ, copy(state2) |> circ)
+        dispatch!(circ, p_minus)
+        cost_minus = model.cost(copy(state1) |> circ, copy(state2) |> circ)
+        grads[i] = epsilon == π/2 ? (cost_plus-cost_minus)/2 : (cost_plus-cost_minus)/(2*epsilon)
+        p_plus[i] = p_expanded[i]
+        p_minus[i] = p_expanded[i]
+    end
     return grads
 end
 
-"""
-    eval_full_grad(d::Data, p::GenericParams, sig)
-
-Compute the full gradient of the cost function for input data.
-
-## Arguments
-- `d::Data`: Input data and labels.
-- `p::GenericParams`: Model parameters.
-- `sig`: Boolean indicating whether to use sigmoid activation.
-
-## Returns
-The total gradient of the cost function.
-
-"""
-#finds full gradient of cost function - with or without sigmoid
-function eval_full_grad(d::Data, p::GenericParams, sig)
+function eval_full_grad(data::AbstractData, model::AbstractModel; sig=true::Bool)
     all_grads = []
-    for i in eachindex(d.s)
-        grad = eval_grad(d.s[i], p)
-        loss = eval_loss(d.s[i], p)
+    for i in eachindex(data.states)
+        grad = eval_grad(data.states[i], model)
+        loss = eval_loss(data.states[i], model)
         if sig == true
-            push!(all_grads, (2*sigmoid(10*loss)-1-d.l[i])*-2*sigmoid(10*loss)^2*-10*grad*exp(-10*loss))
+            push!(all_grads, (2*sigmoid(10*loss)-1-data.labels[i])*-2*sigmoid(10*loss)^2*-10*grad*exp(-10*loss))
         else
-            push!(all_grads, grad*(loss-d.l[i]))
+            push!(all_grads, grad*(loss-data.labels[i]))
         end
     end
-    total_grads = 2/length(d.s)*sum(all_grads)
-    return total_grads
-end
-
-"""
-    eval_full_grad(d::Data, p::InvariantParams, sig)
-
-Compute the full gradient of the cost function for input data with parameters with translational invariance.
-
-## Arguments
-- `d::Data`: Input data and labels.
-- `p::InvariantParams`: Model parameters.
-- `sig`: Boolean indicating whether to use sigmoid activation.
-
-## Returns
-The total gradient of the cost function.
-
-"""
-function eval_full_grad(d::Data, p::InvariantParams, sig)
-    all_grads = []
-    for i in eachindex(d.s)
-        grad = eval_grad(d.s[i], p)
-        loss = eval_loss(d.s[i], p)
-        if sig == true
-            push!(all_grads, (2*sigmoid(10*loss)-1-d.l[i])*-2*sigmoid(10*loss)^2*-10*grad*exp(-10*loss))
-        else
-            push!(all_grads, grad*(loss-d.l[i]))
-        end
-    end
-    total_grads = 2/length(d.s)*sum(all_grads)
-    return reduce_params(p, total_grads)
+    total_grads = 2/length(data.states)*sum(all_grads)
+    return reduce_params(model, total_grads)
 end
