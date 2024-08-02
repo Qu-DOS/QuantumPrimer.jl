@@ -62,30 +62,3 @@ function entanglement_difference(state1::ArrayReg, state2::ArrayReg)
     entropy2 /= n
     return abs(entropy1 - entropy2)
 end
-
-# function concurrence(state::ArrayReg)
-#     n = nqubits(state)
-#     total_concurrence = 0.0
-
-#     for i in 1:n-1
-#         for j in i+1:n
-#             # Compute the reduced density matrix for qubits i and j
-#             rho_ij = partial_trace(state, [i, j])
-            
-#             # Compute the spin-flipped state
-#             sigma_y = [0 -im; im 0]
-#             sigma_y_dagger = adjoint(sigma_y)
-#             rho_tilde = kron(sigma_y, sigma_y) * conj(rho_ij) * kron(sigma_y_dagger, sigma_y_dagger)
-            
-#             # Compute the eigenvalues of rho_ij * rho_tilde
-#             eigenvalues = eigen(rho_ij * rho_tilde).values
-#             sqrt_eigenvalues = sqrt.(sort(eigenvalues, rev=true))
-            
-#             # Compute the concurrence for this pair
-#             concurrence_ij = max(0, sqrt_eigenvalues[1] - sum(sqrt_eigenvalues[2:end]))
-#             total_concurrence += concurrence_ij
-#         end
-#     end
-
-#     return total_concurrence
-# end

@@ -1,30 +1,26 @@
-sigmoid(x) = 1/(1+exp(-x))
-
-circ_z(n::Int) = chain(n, put(1=>Z))
-
-function eval_loss(states::NTuple{2, ArrayReg}, p::AbstractParams; cost=overlap::Function)
+function eval_loss(states::NTuple{2, ArrayReg}, model::AbstractModel)
     state1, state2 = states
-    circ = p.circ
-    dispatch!(circ, expand_params(p))
-    return cost(copy(state1) |> circ, copy(state2) |> circ)
+    circ = model.circ
+    dispatch!(circ, expand_params(model))
+    return model.cost(copy(state1) |> circ, copy(state2) |> circ)
 end
 
-function eval_loss(state::ArrayReg, p::AbstractParams; cost=circ_z::Function)
-    circ = p.circ
-    dispatch!(circ, expand_params(p))
-    return real(expect(cost(p.n), copy(state) |> circ)) #copy so that actual state isn't affected
+function eval_loss(state::ArrayReg, model::AbstractModel)
+    circ = model.circ
+    dispatch!(circ, expand_params(model))
+    return real(expect(model.cost(model.n), copy(state) |> circ)) #copy so that actual state isn't affected
 end
 
-function eval_full_loss(d::AbstractData, p::AbstractParams, sig::Bool)
+function eval_full_loss(data::AbstractData, model::AbstractModel; sig=true::Bool)
     total_loss = 0
-    for i in eachindex(d.s)
-        loss = eval_loss(d.s[i], p)
+    for i in eachindex(data.states)
+        loss = eval_loss(data.states[i], model)
         if sig == true
-            total_loss += (2*sigmoid(10*loss)-1-d.l[i])^2
+            total_loss += (2*sigmoid(10*loss)-1-data.labels[i])^2
         else
-            total_loss += (loss-d.l[i])^2
+            total_loss += (loss-data.labels[i])^2
         end
     end
-    total_loss *= 1/length(d.s)
+    total_loss *= 1/length(data.states)
     return total_loss
 end
