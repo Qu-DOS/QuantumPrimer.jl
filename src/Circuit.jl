@@ -23,13 +23,11 @@ layer_Ry(n::Int) = chain(n, put(i => Ry(0)) for i = 1:n)
 
 layer_CNOT(n::Int) = chain(n, control(i, mod(i, n) + 1 => X) for i = 1:n)
 
-function circ_HEA(n::Int, depth::Int)
+function circ_HEA(n::Int)
     circ = chain(n)
-    for _ = 1:depth
-        push!(circ, layer_Rx(n))
-        push!(circ, layer_Ry(n))
-        push!(circ, layer_CNOT(n))
-    end
+    push!(circ, layer_Rx(n))
+    push!(circ, layer_Ry(n))
+    push!(circ, layer_CNOT(n))
     return circ
 end
 
