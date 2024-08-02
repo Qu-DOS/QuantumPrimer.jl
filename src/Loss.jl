@@ -1,23 +1,21 @@
 sigmoid(x) = 1/(1+exp(-x))
 
-function eval_loss(states::Tuple{T, T} where T<:ArrayReg, p::GenericParams)
+circ_z(n::Int) = chain(n, put(1=>Z))
+
+function eval_loss(states::NTuple{2, ArrayReg}, p::AbstractParams; cost=overlap::Function)
     state1, state2 = states
     circ = p.circ
-    dispatch!(circ, p.params)
-    state1_transformed = copy(state1) |> circ
-    state2_transformed = copy(state2) |> circ
-    loss = destructive_swap_test(state1_transformed, state2_transformed)
-    return loss
+    dispatch!(circ, expand_params(p))
+    return cost(copy(state1) |> circ, copy(state2) |> circ)
 end
 
-function eval_loss(state, p::AbstractParams)
+function eval_loss(state::ArrayReg, p::AbstractParams; cost=circ_z::Function)
     circ = p.circ
     dispatch!(circ, expand_params(p))
-    cost = sum(chain(p.n, put(1=>Z))) #Z gate on first qubit
-    return real(expect(cost, copy(state)|>circ)) #copy so that actual state isn't affected
+    return real(expect(cost(p.n), copy(state) |> circ)) #copy so that actual state isn't affected
 end
 
-function eval_full_loss(d::Union{Data, DataSiamese}, p::AbstractParams, sig)
+function eval_full_loss(d::AbstractData, p::AbstractParams, sig::Bool)
     total_loss = 0
     for i in eachindex(d.s)
         loss = eval_loss(d.s[i], p)

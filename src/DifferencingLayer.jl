@@ -45,3 +45,47 @@ function destructive_swap_test(state1::ArrayReg, state2::ArrayReg; nshots=1000)
     res = res > 0 ? res : 0
     return res
 end
+
+function overlap(state1::ArrayReg, state2::ArrayReg)
+    return abs2(dot(state1.state, state2.state))
+end
+
+function entanglement_difference(state1::ArrayReg, state2::ArrayReg)
+    n = nqubits(state1)
+    entropy1 = 0
+    entropy2 = 0
+    for i in 1:n
+        entropy1 += von_neumann_entropy(state1, i)
+        entropy2 += von_neumann_entropy(state2, i)
+    end
+    entropy1 /= n
+    entropy2 /= n
+    return abs(entropy1 - entropy2)
+end
+
+# function concurrence(state::ArrayReg)
+#     n = nqubits(state)
+#     total_concurrence = 0.0
+
+#     for i in 1:n-1
+#         for j in i+1:n
+#             # Compute the reduced density matrix for qubits i and j
+#             rho_ij = partial_trace(state, [i, j])
+            
+#             # Compute the spin-flipped state
+#             sigma_y = [0 -im; im 0]
+#             sigma_y_dagger = adjoint(sigma_y)
+#             rho_tilde = kron(sigma_y, sigma_y) * conj(rho_ij) * kron(sigma_y_dagger, sigma_y_dagger)
+            
+#             # Compute the eigenvalues of rho_ij * rho_tilde
+#             eigenvalues = eigen(rho_ij * rho_tilde).values
+#             sqrt_eigenvalues = sqrt.(sort(eigenvalues, rev=true))
+            
+#             # Compute the concurrence for this pair
+#             concurrence_ij = max(0, sqrt_eigenvalues[1] - sum(sqrt_eigenvalues[2:end]))
+#             total_concurrence += concurrence_ij
+#         end
+#     end
+
+#     return total_concurrence
+# end

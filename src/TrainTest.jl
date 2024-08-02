@@ -1,4 +1,4 @@
-function test_model(d::Data, p::AbstractParams, sig)
+function test_model(d::AbstractData, p::AbstractParams, sig)
     preds = []
     suc_inds = []
     for i in eachindex(d.s)
@@ -14,7 +14,7 @@ function test_model(d::Data, p::AbstractParams, sig)
     return preds, suc_rate, suc_inds
 end
 
-function train_test_model(d1::Data, d2::Data, p::AbstractParams, iters, optim, sig; output=false)
+function train_test_model(d1::AbstractData, d2::AbstractData, p::AbstractParams, iters, optim, sig; output=false)
     opt = Optimisers.setup(optim, p.params)
     loss_track = Float64[]
     tr_track = Float64[]

@@ -6,18 +6,29 @@ function eval_grad(state::ArrayReg, p::AbstractParams)
     return grads
 end
 
-function eval_grad(state::Tuple{T, T} where T <: ArrayReg, p::AbstractParams)
+# uses parameter-shift rule (or finite difference) to evaluate the gradient 
+function eval_grad(state::NTuple{2, T} where T <: ArrayReg, p::AbstractParams; cost_func=entanglement_difference::Function, epsilon=π/2)
     state1, state2 = state
-    n = nqubits(state1)
     circ = p.circ
-    dispatch!(circ, expand_params(p))
-    cost = destructive_swap_test(state1, state2)
-    cost = circ_swap_test(n)
-    _, grads = expect'(cost, (copy(state1), copy(state2)) => circ)
+    p_expanded = expand_params(p)
+    p_plus = deepcopy(p_expanded)
+    p_minus = deepcopy(p_expanded)
+    grads = similar(p_expanded)
+    for i in eachindex(p_expanded)
+        p_plus[i] += epsilon
+        p_minus[i] -= epsilon
+        dispatch!(circ, p_plus)
+        cost_plus = cost_func(copy(state1) |> circ, copy(state2) |> circ)
+        dispatch!(circ, p_minus)
+        cost_minus = cost_func(copy(state1) |> circ, copy(state2) |> circ)
+        grads[i] = epsilon == π/2 ? (cost_plus-cost_minus)/2 : (cost_plus-cost_minus)/(2*epsilon)
+        p_plus[i] = p_expanded[i]
+        p_minus[i] = p_expanded[i]
+    end
     return grads
 end
 
-function eval_full_grad(d::Data, p::AbstractParams, sig)
+function eval_full_grad(d::AbstractData, p::AbstractParams, sig::Bool)
     all_grads = []
     for i in eachindex(d.s)
         grad = eval_grad(d.s[i], p)
