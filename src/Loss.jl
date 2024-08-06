@@ -1,3 +1,7 @@
+# Exports
+export eval_loss,
+       eval_full_loss
+
 function eval_loss(states::NTuple{2, ArrayReg}, model::AbstractModel)
     state1, state2 = states
     circ = model.circ

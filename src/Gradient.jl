@@ -1,3 +1,7 @@
+# Exports
+export eval_grad,
+       eval_full_grad
+
 function eval_grad(state::ArrayReg, model::AbstractModel)
     circ = model.circ
     dispatch!(circ, expand_params(model))

@@ -1,3 +1,7 @@
+# Exports
+export test_model,
+       train_test_model
+       
 function test_model(data::AbstractData, model::AbstractModel; sig=true::Bool)
     preds = []
     suc_inds = []

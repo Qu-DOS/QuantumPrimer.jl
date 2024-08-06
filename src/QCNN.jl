@@ -1,4 +1,7 @@
-function build_QCNN(n::Int; ansatz=conv_Ry::Function)
+# Exports
+export build_QCNN
+
+function build_QCNN(n::Int; ansatz=circ_Ry_conv::Function)
     circ = chain(n)
     n_q = n
     while n_q>1

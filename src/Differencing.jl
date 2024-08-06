@@ -1,14 +1,10 @@
-function circ_swap_test(n::Int)
-    circ = chain(1+2n)
-    push!(circ, put(1=>H))
-    for i in 1:n
-        push!(circ, control(1, (1+i, 1+n+i)=>SWAP))
-    end
-    push!(circ, put(1=>H))
-    return circ
-end
+# Export
+export swap_test,
+       destructive_swap_test,
+       entanglement_difference,
+       overlap
 
-function swap_test(state1::ArrayReg, state2::ArrayReg; nshots=1000)
+function swap_test(state1::ArrayReg, state2::ArrayReg; nshots=1000::Int)
     n = nqubits(state1)
     circ = circ_swap_test(n)
     measurements = measure(join(state2, state1, zero_state(1)) |> circ, 1; nshots=nshots)
@@ -19,16 +15,7 @@ function swap_test(state1::ArrayReg, state2::ArrayReg; nshots=1000)
     return res
 end
 
-function circ_destructive_swap_test(n::Int)
-    circ = chain(2n)
-    for i in 1:n
-        push!(circ, control(i, n+i=>X))
-        push!(circ, put(i=>H))
-    end
-    return circ
-end
-
-function destructive_swap_test(state1::ArrayReg, state2::ArrayReg; nshots=1000)
+function destructive_swap_test(state1::ArrayReg, state2::ArrayReg; nshots=1000::Int)
     n = nqubits(state1)
     circ = circ_destructive_swap_test(n)
     measurements = measure(join(state2, state1) |> circ, 1:2n; nshots=nshots)

@@ -1,3 +1,8 @@
+# Exports
+export AbstractData,
+       Data,
+       DataSiamese
+
 abstract type AbstractData end
 
 struct Data{S <: Vector{SS} where SS <: ArrayReg, L <: Vector{LL} where LL <: Real} <: AbstractData

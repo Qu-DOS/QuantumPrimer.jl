@@ -1,3 +1,11 @@
+# Exports
+export AbstractModel,
+       GeneralModel,
+       InvariantModel,
+       initialize_params,
+       expand_params,
+       reduce_params
+
 abstract type AbstractModel end
 
 Base.@kwdef mutable struct GeneralModel{NN<:Int, CC<:ChainBlock, AA<:Function, FF<:Function, TT<:AbstractVector{T} where T<:Real} <: AbstractModel
