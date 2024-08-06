@@ -1,4 +1,4 @@
 # Exports
 export sigmoid
 
-sigmoid(x) = 1 / (1 + exp(-x))
+sigmoid(x::Float64) = 1 / (1 + exp(-x))

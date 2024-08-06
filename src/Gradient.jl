@@ -10,7 +10,7 @@ function eval_grad(state::ArrayReg, model::AbstractModel)
 end
 
 # uses parameter-shift rule (or finite difference if epsilon!=π/2) to evaluate the gradient 
-function eval_grad(state::NTuple{2, ArrayReg}, model::AbstractModel; epsilon=π/2)
+function eval_grad(state::NTuple{2, ArrayReg}, model::AbstractModel; epsilon=π/2::Float64)
     state1, state2 = state
     circ = model.circ
     p_expanded = expand_params(model)
