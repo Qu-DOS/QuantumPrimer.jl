@@ -12,7 +12,7 @@ end
 function eval_loss(state::ArrayReg, model::AbstractModel)
     circ = model.circ
     dispatch!(circ, expand_params(model))
-    return real(expect(model.cost(model.n), copy(state) |> circ)) #copy so that actual state isn't affected
+    return expect(model.cost(model.n), copy(state) |> circ) #copy so that actual state isn't affected
 end
 
 function eval_full_loss(data::AbstractData, model::AbstractModel; sig=true::Bool)
