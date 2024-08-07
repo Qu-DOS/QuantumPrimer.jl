@@ -1,4 +1,4 @@
-# QCNN documentation
+# QNN documentation
 
 ## Data
 ```@docs

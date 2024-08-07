@@ -1,6 +1,6 @@
 ### importing qcomp ###
-include("../src/QComp.jl")
-using .QComp
+include("../src/QuantumPrimer.jl")
+using .QuantumPrimer
 
 ########################
 ########################

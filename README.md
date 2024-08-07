@@ -1,15 +1,15 @@
-[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://Qu-DOS.github.io/QComp.jl/stable/)
-[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://Qu-DOS.github.io/QComp.jl/dev/)
-[![Build Status](https://github.com/Qu-DOS/QComp.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/Qu-DOS/QComp.jl/actions/workflows/CI.yml?query=branch%3Amain)
+[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://Qu-DOS.github.io/QuantumPrimer.jl/stable/)
+[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://Qu-DOS.github.io/QuantumPrimer.jl/dev/)
+[![Build Status](https://github.com/Qu-DOS/QuantumPrimer.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/Qu-DOS/QuantumPrimer.jl/actions/workflows/CI.yml?query=branch%3Amain)
 
-# QComp.jl
-A library to collect and standardize quantum computing routines.
+# QuantumPrimer.jl
+Julia package for convenient quantum computing and quantum machine learning routines.
 
 # Run minimal working examples
 Find Julia notebooks of minimal working examples in the folder `notebooks`.
 
 <!-- ## Online documentation -->
-<!-- Check the online documentation at <a href="https://Qu-DOS.github.io/QComp.jl/dev/">this link</a>. -->
+<!-- Check the online documentation at <a href="https://Qu-DOS.github.io/QuantumPrimer.jl/dev/">this link</a>. -->
 
 # Contributions
 1. Open a branch with a name suggesting the feature that is being implemented, e.g. "qcnn-invariant"

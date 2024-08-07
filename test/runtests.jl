@@ -1,6 +1,6 @@
-using QComp
+using QuantumPrimer
 using Test
 
-@testset "QComp.jl" begin
+@testset "QuantumPrimer.jl" begin
     # Write your tests here.
 end

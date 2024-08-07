@@ -1,5 +1,5 @@
-# QComp documentation
-Documentation for [QComp](https://github.com/Qu-DOS/QComp.jl).
+# QuantumPrimer documentation
+Documentation for [QuantumPrimer](https://github.com/Qu-DOS/QuantumPrimer.jl).
 
 ```@contents
 ```

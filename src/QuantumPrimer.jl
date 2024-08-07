@@ -1,4 +1,4 @@
-module QComp
+module QuantumPrimer
 
 using Yao
 using Random
