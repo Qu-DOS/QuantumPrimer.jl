@@ -18,6 +18,7 @@ function eval_grad(state::ArrayReg, model::AbstractModel; lambda=1.::Float64, re
     circ = model.circ
     dispatch!(circ, expand_params(model))
     _, grads = expect'(model.cost(model.n), copy(state)=>circ)
+    grads = convert.(Float64, grads)
     grads = regularize_grads(grads, model; lambda=lambda, regularization=regularization)
     return grads
 end
