@@ -1,8 +1,34 @@
 # Export
-export swap_test,
+export correlation,
+       projected_quantum_kernel,
+       swap_test,
        destructive_swap_test,
        entanglement_difference,
        overlap
+
+function correlation(state1::ArrayReg, state2::ArrayReg, obs_A::ChainBlock, obs_B::ChainBlock)
+    n = nqubits(state1)
+    joined_state = join(state2, state1)
+    A = sandwich(joined_state, obs_A * circ_swap_all(n), joined_state)
+    B = sandwich(joined_state, obs_B * circ_swap_all(n), joined_state)
+    AB = sandwich(joined_state, obs_A * obs_B + obs_B * obs_A, joined_state) / 2 # symmetrized
+    return real(AB - A*B)
+end
+
+function projected_quantum_kernel(state1::ArrayReg, state2::ArrayReg; gamma=1.::Float64) # S110 in huang2021power
+    n = nqubits(state1)
+    pauli_basis = [X, Y, Z]
+    summ = 0
+    for pauli_op in pauli_basis
+        for i in 1:n
+            circ = circ_gate_single(n, i, pauli_op)
+            exp_value1 = expect(circ, copy(state1))
+            exp_value2 = expect(circ, copy(state2))
+            summ += (exp_value1 - exp_value2)^2
+        end
+    end
+    return exp(-gamma*summ)
+end
 
 function swap_test(state1::ArrayReg, state2::ArrayReg; nshots=1000::Int)
     n = nqubits(state1)
