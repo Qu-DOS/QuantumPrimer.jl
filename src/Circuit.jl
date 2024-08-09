@@ -14,8 +14,8 @@ export circ_gate_single,
        circ_Xsum,
        circ_Ysum,
        circ_Zsum,
+       circ_Ry_simple_conv,
        circ_Ry_conv,
-       circ_Ry2_conv,
        circ_SU4_conv,
        circ_Rx_layer,
        circ_Ry_layer,
@@ -53,9 +53,9 @@ circ_Xsum(n::Int) = sum(chain(n, put(i=>X) for i=1:n))
 circ_Ysum(n::Int) = sum(chain(n, put(i=>Y) for i=1:n))
 circ_Zsum(n::Int) = sum(chain(n, put(i=>Z) for i=1:n))
 
-circ_Ry_conv(n::Int, i::Int, j::Int) = chain(n, put(i=>Ry(0)), put(j=>Ry(0)), control(i,j=>X))
+circ_Ry_simple_conv(n::Int, i::Int, j::Int) = chain(n, put(i=>Ry(0)), put(j=>Ry(0)), control(i,j=>X))
 
-circ_Ry2_conv(n::Int, i::Int, j::Int) = chain(n, put(i=>Ry(0)), put(j=>Ry(0)), control(i,j=>X), put(i=>Ry(0)),
+circ_Ry_conv(n::Int, i::Int, j::Int) = chain(n, put(i=>Ry(0)), put(j=>Ry(0)), control(i,j=>X), put(i=>Ry(0)),
                             put(j=>Ry(0)), control(i,j=>X), put(i=>Ry(0)), put(j=>Ry(0)))
 
 function circ_SU4_conv(n::Int, i::Int, j::Int)
