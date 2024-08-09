@@ -1,11 +1,9 @@
 # Exports
-export eval_grad,
+export regularize_grads,
+       eval_grad,
        eval_full_grad
 
-function eval_grad(state::ArrayReg, model::AbstractModel; lambda=1.::Float64, regularization=:nothing::Symbol)
-    circ = model.circ
-    dispatch!(circ, expand_params(model))
-    _, grads = expect'(model.cost(model.n), copy(state)=>circ)
+function regularize_grads(grads::Vector{Float64}, model::AbstractModel; lambda=1.::Float64, regularization=:nothing::Symbol)
     if regularization == :l1
         l1 = sign.(expand_params(model))
         grads += lambda * l1
@@ -13,6 +11,14 @@ function eval_grad(state::ArrayReg, model::AbstractModel; lambda=1.::Float64, re
         l2 = 2*expand_params(model)
         grads += lambda * l2
     end
+    return grads
+end
+
+function eval_grad(state::ArrayReg, model::AbstractModel; lambda=1.::Float64, regularization=:nothing::Symbol)
+    circ = model.circ
+    dispatch!(circ, expand_params(model))
+    _, grads = expect'(model.cost(model.n), copy(state)=>circ)
+    grads = regularize_grads(grads, model; lambda=lambda, regularization=regularization)
     return grads
 end
 
@@ -35,13 +41,7 @@ function eval_grad(state::NTuple{2, ArrayReg}, model::AbstractModel; epsilon=(π
         p_plus[i] = p_expanded[i]
         p_minus[i] = p_expanded[i]
     end
-    if regularization == :l1
-        l1 = sign.(expand_params(model))
-        grads += lambda * l1
-    elseif regularization == :l2
-        l2 = 2*expand_params(model)
-        grads += lambda * l2
-    end
+    grads = regularize_grads(grads, model; lambda=lambda, regularization=regularization)
     return grads
 end
 
