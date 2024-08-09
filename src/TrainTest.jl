@@ -2,11 +2,11 @@
 export test_model,
        train_test_model
        
-function test_model(data::AbstractData, model::AbstractModel; sig=true::Bool)
+function test_model(data::AbstractData, model::AbstractModel; sig=true::Bool, lambda=1.::Float64, regularization=:nothing::Symbol)
     preds = []
     suc_inds = []
     for i in eachindex(data.states)
-        loss = eval_loss(data.states[i], model)
+        loss = eval_loss(data.states[i], model; lambda=lambda, regularization=regularization)
         model_pred = 0
         fx = 0
         sig==true ? fx=2*sigmoid(10*loss)-1 : fx=loss
@@ -18,24 +18,33 @@ function test_model(data::AbstractData, model::AbstractModel; sig=true::Bool)
     return preds, suc_rate, suc_inds
 end
 
-function train_test_model(data1::AbstractData, data2::AbstractData, model::AbstractModel, iters::Int, optim; sig=true::Bool, verbose=false)
+function train_test_model(
+        data1::AbstractData,
+        data2::AbstractData,
+        model::AbstractModel,
+        iters::Int,
+        optim;
+        sig=true::Bool,
+        lambda=0.2::Float64,
+        regularization=:nothing::Symbol,
+        verbose=false::Bool)
     opt = Optimisers.setup(optim, model.params)
     loss_track = Float64[]
     tr_track = Float64[]
     te_track = Float64[]
-    initial_loss = eval_full_loss(data1, model; sig=sig)
-    tr_preds, tr_acc, _ = test_model(data1, model; sig=sig)
-    te_preds, te_acc, _ = test_model(data2, model; sig=sig)
+    initial_loss = eval_full_loss(data1, model; sig=sig, lambda=lambda, regularization=regularization)
+    tr_preds, tr_acc, _ = test_model(data1, model; sig=sig, lambda=lambda, regularization=regularization)
+    te_preds, te_acc, _ = test_model(data2, model; sig=sig, lambda=lambda, regularization=regularization)
     println("Initial: loss = $(initial_loss), tr_acc = $(tr_acc), te_acc = $(te_acc)")
     append!(loss_track, initial_loss)
     append!(tr_track, tr_acc)
     append!(te_track, te_acc)
     intervals = collect(0:10:iters)
     for i in 1:iters
-        Optimisers.update!(opt, model.params, eval_full_grad(data1, model; sig=sig))
-        current_loss = eval_full_loss(data1, model; sig=sig)
-        tr_preds, tr_acc, _ = test_model(data1, model; sig=sig)
-        te_preds, te_acc, _ = test_model(data2, model; sig=sig)
+        Optimisers.update!(opt, model.params, eval_full_grad(data1, model; sig=sig, lambda=lambda, regularization=regularization))
+        current_loss = eval_full_loss(data1, model; sig=sig, lambda=lambda, regularization=regularization)
+        tr_preds, tr_acc, _ = test_model(data1, model; sig=sig, lambda=lambda, regularization=regularization)
+        te_preds, te_acc, _ = test_model(data2, model; sig=sig, lambda=lambda, regularization=regularization)
         append!(loss_track, current_loss)
         append!(tr_track, tr_acc)
         append!(te_track, te_acc)
