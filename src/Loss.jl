@@ -40,15 +40,11 @@ function eval_loss(state::ArrayReg, model::AbstractModel; lambda=1.::Float64, re
     return loss
 end
 
-function eval_full_loss(data::AbstractData, model::AbstractModel; sig=true::Bool, lambda=1.::Float64, regularization=:nothing::Symbol)
+function eval_full_loss(data::AbstractData, model::AbstractModel; lambda=1.::Float64, regularization=:nothing::Symbol)
     total_loss = 0
     for i in eachindex(data.states)
         loss = eval_loss(data.states[i], model; lambda=lambda, regularization=regularization)
-        if sig == true
-            total_loss += (2*sigmoid(10*loss)-1-data.labels[i])^2
-        else
-            total_loss += (loss-data.labels[i])^2
-        end
+        total_loss += (model.activation(loss)-data.labels[i])^2
     end
     total_loss *= 1/length(data.states)
     return total_loss

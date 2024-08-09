@@ -6,6 +6,7 @@ using Optimisers
 using LinearAlgebra
 using Statistics
 using Combinatorics
+using ForwardDiff
 
 include("Circuit.jl");
 include("Data.jl");

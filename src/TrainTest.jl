@@ -2,16 +2,15 @@
 export test_model,
        train_test_model
        
-function test_model(data::AbstractData, model::AbstractModel; sig=true::Bool, lambda=1.::Float64, regularization=:nothing::Symbol)
-    preds = []
-    suc_inds = []
+function test_model(data::AbstractData, model::AbstractModel; lambda=1.::Float64, regularization=:nothing::Symbol)
+    preds = zeros(Float64, length(data.states))
+    suc_inds = Vector{Int}()
     for i in eachindex(data.states)
         loss = eval_loss(data.states[i], model; lambda=lambda, regularization=regularization)
         model_pred = 0
-        fx = 0
-        sig==true ? fx=2*sigmoid(10*loss)-1 : fx=loss
+        fx = model.activation(loss)
         fx>0 ? model_pred=1 : model_pred=-1 # binary classification determined by sign of cost function
-        push!(preds, fx)
+        preds[i] = fx
         model_pred ≈ data.labels[i] ? push!(suc_inds, i) : nothing
     end
     suc_rate = length(suc_inds)/length(data.states)
@@ -23,8 +22,7 @@ function train_test_model(
         data2::AbstractData,
         model::AbstractModel,
         iters::Int,
-        optim;
-        sig=true::Bool,
+        optim::AbstractRule;
         lambda=0.2::Float64,
         regularization=:nothing::Symbol,
         verbose=false::Bool)
@@ -32,19 +30,19 @@ function train_test_model(
     loss_track = Float64[]
     tr_track = Float64[]
     te_track = Float64[]
-    initial_loss = eval_full_loss(data1, model; sig=sig, lambda=lambda, regularization=regularization)
-    tr_preds, tr_acc, _ = test_model(data1, model; sig=sig, lambda=lambda, regularization=regularization)
-    te_preds, te_acc, _ = test_model(data2, model; sig=sig, lambda=lambda, regularization=regularization)
+    initial_loss = eval_full_loss(data1, model; lambda=lambda, regularization=regularization)
+    tr_preds, tr_acc, _ = test_model(data1, model; lambda=lambda, regularization=regularization)
+    te_preds, te_acc, _ = test_model(data2, model; lambda=lambda, regularization=regularization)
     println("Initial: loss = $(initial_loss), tr_acc = $(tr_acc), te_acc = $(te_acc)")
     append!(loss_track, initial_loss)
     append!(tr_track, tr_acc)
     append!(te_track, te_acc)
     intervals = collect(0:10:iters)
     for i in 1:iters
-        Optimisers.update!(opt, model.params, eval_full_grad(data1, model; sig=sig, lambda=lambda, regularization=regularization))
-        current_loss = eval_full_loss(data1, model; sig=sig, lambda=lambda, regularization=regularization)
-        tr_preds, tr_acc, _ = test_model(data1, model; sig=sig, lambda=lambda, regularization=regularization)
-        te_preds, te_acc, _ = test_model(data2, model; sig=sig, lambda=lambda, regularization=regularization)
+        Optimisers.update!(opt, model.params, eval_full_grad(data1, model; lambda=lambda, regularization=regularization))
+        current_loss = eval_full_loss(data1, model; lambda=lambda, regularization=regularization)
+        tr_preds, tr_acc, _ = test_model(data1, model; lambda=lambda, regularization=regularization)
+        te_preds, te_acc, _ = test_model(data2, model; lambda=lambda, regularization=regularization)
         append!(loss_track, current_loss)
         append!(tr_track, tr_acc)
         append!(te_track, te_acc)

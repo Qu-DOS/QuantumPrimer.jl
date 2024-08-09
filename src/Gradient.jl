@@ -45,17 +45,14 @@ function eval_grad(state::NTuple{2, ArrayReg}, model::AbstractModel; epsilon=(π
     return grads
 end
 
-function eval_full_grad(data::AbstractData, model::AbstractModel; sig=true::Bool, lambda=1.::Float64, regularization=:nothing::Symbol)
-    all_grads = []
+function eval_full_grad(data::AbstractData, model::AbstractModel; lambda=1.::Float64, regularization=:nothing::Symbol)
+    all_grads = Vector{Vector{Float64}}()
     for i in eachindex(data.states)
         grad = eval_grad(data.states[i], model; lambda=lambda, regularization=regularization)
         loss = eval_loss(data.states[i], model; lambda=lambda, regularization=regularization)
-        if sig == true
-            push!(all_grads, (2*sigmoid(10*loss)-1-data.labels[i])*-2*sigmoid(10*loss)^2*-10*grad*exp(-10*loss))
-        else
-            push!(all_grads, grad*(loss-data.labels[i]))
-        end
+        activation_derivative = ForwardDiff.derivative(model.activation, loss)
+        push!(all_grads, grad * 2 * (model.activation(loss) - data.labels[i]) * activation_derivative)
     end
-    total_grads = 2/length(data.states)*sum(all_grads)
+    total_grads = sum(all_grads) / length(data.states)
     return reduce_params(model, total_grads)
 end

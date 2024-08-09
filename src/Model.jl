@@ -8,21 +8,23 @@ export AbstractModel,
 
 abstract type AbstractModel end
 
-Base.@kwdef mutable struct GeneralModel{NN<:Int, CC<:ChainBlock, AA<:Function, FF<:Function, TT<:AbstractVector{T} where T<:Real} <: AbstractModel
+Base.@kwdef mutable struct GeneralModel{NN<:Int, CC<:ChainBlock, AA<:Function, FF<:Function, VV<:Function, TT<:AbstractVector{T} where T<:Real} <: AbstractModel
     n::NN
     n_layers::NN = ceil(Int, log2(n))
     circ::CC
     ansatz::AA
     cost::FF
+    activation::VV = identity
     params::TT = Float64[]
 end
 
-Base.@kwdef mutable struct InvariantModel{NN<:Int, CC<:ChainBlock, AA<:Function, FF<:Function, TT<:AbstractVector{T} where T<:Real} <: AbstractModel
+Base.@kwdef mutable struct InvariantModel{NN<:Int, CC<:ChainBlock, AA<:Function, FF<:Function, VV<:Function, TT<:AbstractVector{T} where T<:Real} <: AbstractModel
     n::NN
     n_layers::NN = ceil(Int, log2(n))
     circ::CC
     ansatz::AA
     cost::FF
+    activation::VV = identity
     params::TT = Float64[]
 end
 
