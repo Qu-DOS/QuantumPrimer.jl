@@ -1,5 +1,10 @@
 # Exports
-export circ_single_gate,
+export circ_gate_single,
+       circ_gate_n,
+       circ_gate_sum,
+       circ_block_single,
+       circ_block_n,
+       circ_block_sum,
        circ_X,
        circ_Y,
        circ_Z,
@@ -19,23 +24,30 @@ export circ_single_gate,
        circ_HEA,
        circ_phase_flip,
        circ_hypergraph_state,
+       circ_swap_all,
        circ_swap_test,
        circ_destructive_swap_test
 
-circ_single_gate(n::Int, i::Int, gate::ConstantGate) = chain(n, put(i=>gate))
+circ_gate_single(n::Int, i::Int, gate::ConstantGate) = chain(n, put(i=>gate))
+circ_gate_n(n::Int, gate::ConstantGate) = chain(n, put(i=>gate) for i=1:n)
+circ_gate_sum(n::Int, gate::ConstantGate) = sum(chain(n, put(i=>gate) for i=1:n))
 
-circ_X(n::Int, i::Int) = circ_single_gate(n, i, X)
-circ_X(n::Int) = circ_single_gate(n, 1, X)
+circ_block_single(n::Int, i::Int, block::ChainBlock{2}) = chain(n, put(i=>block))
+circ_block_n(n::Int, block::ChainBlock{2}) = chain(n, put(i=>block) for i=1:n)
+circ_block_sum(n::Int, block::ChainBlock{2}) = sum(chain(n, put(i=>block) for i=1:n))
 
-circ_Y(n::Int, i::Int) = circ_single_gate(n, i, Y)
-circ_Y(n::Int) = circ_single_gate(n, 1, Y)
+circ_X(n::Int, i::Int) = circ_gate_single(n, i, X)
+circ_X(n::Int) = circ_gate_single(n, 1, X)
 
-circ_Z(n::Int, i::Int) = circ_single_gate(n, i, Z)
-circ_Z(n::Int) = circ_single_gate(n, 1, Z)
+circ_Y(n::Int, i::Int) = circ_gate_single(n, i, Y)
+circ_Y(n::Int) = circ_gate_single(n, 1, Y)
 
-circ_Xn(n::Int) = chain(n, put(i=>X) for i = 1:n)
-circ_Yn(n::Int) = chain(n, put(i=>Y) for i = 1:n)
-circ_Zn(n::Int) = chain(n, put(i=>Z) for i = 1:n)
+circ_Z(n::Int, i::Int) = circ_gate_single(n, i, Z)
+circ_Z(n::Int) = circ_gate_single(n, 1, Z)
+
+circ_Xn(n::Int) = chain(n, put(i=>X) for i=1:n)
+circ_Yn(n::Int) = chain(n, put(i=>Y) for i=1:n)
+circ_Zn(n::Int) = chain(n, put(i=>Z) for i=1:n)
 
 circ_Xsum(n::Int) = sum(chain(n, put(i=>X) for i=1:n))
 circ_Ysum(n::Int) = sum(chain(n, put(i=>Y) for i=1:n))
@@ -82,6 +94,14 @@ function circ_hypergraph_state(vec::Vector{Int})
     circ = chain(n)
     push!(circ, chain(n, put(i => H) for i in 1:n))
     map(i -> vec[i+1] == -1 ? push!(circ, circ_phase_flip(n, i)) : nothing, 0:2^n-1)
+    return circ
+end
+
+function circ_swap_all(n::Int)
+    circ = chain(2n)
+    for i in 1:n
+        push!(circ, swap(i, n+i))
+    end
     return circ
 end
 
