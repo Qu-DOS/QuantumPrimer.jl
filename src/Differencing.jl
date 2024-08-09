@@ -1,18 +1,31 @@
 # Export
-export correlation,
+export covariance,
+       covariance_normalized,
        projected_quantum_kernel,
        swap_test,
        destructive_swap_test,
        entanglement_difference,
        overlap
 
-function correlation(state1::ArrayReg, state2::ArrayReg, obs_A::ChainBlock, obs_B::ChainBlock)
+function covariance(state1::ArrayReg, state2::ArrayReg, obs_A::Union{ChainBlock, Add}, obs_B::Union{ChainBlock, Add})
     n = nqubits(state1)
     joined_state = join(state2, state1)
-    A = sandwich(joined_state, obs_A * circ_swap_all(n), joined_state)
-    B = sandwich(joined_state, obs_B * circ_swap_all(n), joined_state)
-    AB = sandwich(joined_state, obs_A * obs_B + obs_B * obs_A, joined_state) / 2 # symmetrized
-    return real(AB - A*B)
+    A = sandwich(joined_state, circ_swap_all(2n) * obs_A, joined_state)
+    B = sandwich(joined_state, circ_swap_all(2n) * obs_B, joined_state)
+    AB = sandwich(joined_state, circ_swap_all(2n) * obs_A * obs_B, joined_state)
+    BA = sandwich(joined_state, circ_swap_all(2n) * obs_B * obs_A, joined_state)
+    AB_sym = (AB + BA) / 2
+    return AB_sym - A*B
+end
+
+function covariance_normalized(state1::ArrayReg, state2::ArrayReg, obs_A::Union{ChainBlock, Add}, obs_B::Union{ChainBlock, Add})
+    n = nqubits(state1)
+    A = sandwich(state1, obs_A, state2)
+    B = sandwich(state1, obs_B, state2)
+    AB = sandwich(state1, obs_A * obs_B, state2)
+    BA = sandwich(state1, obs_B * obs_A, state2)
+    AB_sym = (AB + BA) / 2
+    return AB_sym - A*B
 end
 
 function projected_quantum_kernel(state1::ArrayReg, state2::ArrayReg; gamma=1.::Float64) # S110 in huang2021power

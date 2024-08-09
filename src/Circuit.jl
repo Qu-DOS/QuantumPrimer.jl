@@ -98,9 +98,11 @@ function circ_hypergraph_state(vec::Vector{Int})
 end
 
 function circ_swap_all(n::Int)
-    circ = chain(2n)
-    for i in 1:n
-        push!(circ, swap(i, n+i))
+    isodd(n) ? error("n must be even") : nothing
+    circ = chain(n)
+    m = n÷2
+    for i in 1:m
+        push!(circ, swap(i, m+i))
     end
     return circ
 end
