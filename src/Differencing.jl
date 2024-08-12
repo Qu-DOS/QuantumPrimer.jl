@@ -28,6 +28,14 @@ function covariance_normalized(state1::ArrayReg, state2::ArrayReg, obs_A::Union{
     return AB_sym - A*B
 end
 
+function covariance_XZ(state::ArrayReg)
+    n = nqubits(state)
+    cost1 = real(expect(circ_X(n), copy(state))) * real(expect(circ_Z(n, (n%2)+1), copy(state)))
+    cost2 = real(expect(circ_X(n)*circ_Z(n, (n%2)+1), copy(state)))
+    cost = abs(cost2 - cost1)
+    return cost
+end
+
 function projected_quantum_kernel(state1::ArrayReg, state2::ArrayReg; gamma=1.::Float64) # S110 in huang2021power
     n = nqubits(state1)
     pauli_basis = [X, Y, Z]

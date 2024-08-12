@@ -46,6 +46,34 @@ function eval_grad(state::NTuple{2, ArrayReg}, model::AbstractModel; epsilon=(π
     return grads
 end
 
+# uses parameter-shift rule (or finite difference if epsilon!=π/2) to evaluate the gradient 
+function eval_grad(state::ArrayReg, model1::AbstractModel, model2::AbstractModel; epsilon=(π/2)::Float64, lambda=1.::Float64, regularization=:nothing::Symbol)
+    circ1 = model1.circ
+    circ2 = model2.circ
+    circ_full = chain(model1.n*2, put!(1:model1.n => circ1), put!(model1.n+1:model1.n*2 => circ2))
+    p_expanded1 = expand_params(model1)
+    p_expanded2 = expand_params(model2)
+    p_expanded_full = vcat(p_expanded1, p_expanded2)
+    n_parameters_full = length(p_expanded_full)
+    p_plus = deepcopy(p_expanded_full)
+    p_minus = deepcopy(p_expanded_full)
+    grads = similar(p_expanded_full)
+    for i in eachindex(p_expanded_full)
+        p_plus[i] += epsilon
+        p_minus[i] -= epsilon
+        dispatch!(circ1, p_plus[1:n_parameters_full÷2])
+        dispatch!(circ2, p_plus[n_parameters_full÷2+1:end])
+        cost_plus = model.cost(copy(state) |> circ_full)
+        dispatch!(circ1, p_minus[1:n_parameters_full÷2])
+        dispatch!(circ2, p_minus[n_parameters_full÷2+1:end])
+        cost_minus = model.cost(copy(state) |> circ_full)
+        grads[i] = epsilon == π/2 ? (cost_plus-cost_minus)/2 : (cost_plus-cost_minus)/(2*epsilon)
+        p_plus[i] = p_expanded_full[i]
+        p_minus[i] = p_expanded_full[i]
+    end
+    return grads
+end
+
 function eval_full_grad(data::AbstractData, model::AbstractModel; lambda=1.::Float64, regularization=:nothing::Symbol)
     all_grads = Vector{Vector{Float64}}()
     for i in eachindex(data.states)
