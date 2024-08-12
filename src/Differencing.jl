@@ -5,7 +5,8 @@ export covariance,
        swap_test,
        destructive_swap_test,
        entanglement_difference,
-       overlap
+       overlap,
+       covariance_XZ
 
 function covariance(state1::ArrayReg, state2::ArrayReg, obs_A::Union{ChainBlock, Add}, obs_B::Union{ChainBlock, Add})
     n = nqubits(state1)
@@ -30,8 +31,8 @@ end
 
 function covariance_XZ(state::ArrayReg)
     n = nqubits(state)
-    cost1 = real(expect(circ_X(n), copy(state))) * real(expect(circ_Z(n, (n%2)+1), copy(state)))
-    cost2 = real(expect(circ_X(n)*circ_Z(n, (n%2)+1), copy(state)))
+    cost1 = expect(circ_X(n), copy(state)) * expect(circ_Z(n, (n÷2)+1), copy(state))
+    cost2 = expect(circ_X(n) * circ_Z(n, (n÷2)+1), copy(state))
     cost = abs(cost2 - cost1)
     return cost
 end

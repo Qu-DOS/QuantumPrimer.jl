@@ -40,18 +40,19 @@ function eval_loss(state::ArrayReg, model::AbstractModel; lambda=1.::Float64, re
     return loss
 end
 
-function eval_loss(state::ArrayReg, model1::AbstractModel, model2::AbstractModel; lambda=1.::Float64, regularization=:nothing::Symbol)
+function eval_loss(state::ArrayReg, models::NTuple{2, AbstractModel}; lambda=1.::Float64, regularization=:nothing::Symbol)
+    model1, model2 = models
     circ1 = model1.circ
     circ2 = model2.circ
-    circ_full = chain(model1.n*2, put!(1:n => circ1), put!(model1.n+1:model1.n*2 => circ2))
+    circ_full = chain(model1.n*2, put(1:model1.n => circ1), put(model1.n+1:model1.n*2 => circ2))
     dispatch!(circ1, expand_params(model1))
     dispatch!(circ2, expand_params(model2))
-    cost_function1 = try
+    cost_function = try
         model1.cost(model1.n)
     catch
         model1.cost
     end
-    if typeof(cost_function1) <: ChainBlock
+    if typeof(cost_function) <: ChainBlock
         loss = expect(model1.cost(model1.n), copy(state) |> circ) # copy so that actual state isn't affected
     else
         loss = cost_function(copy(state) |> circ_full)
@@ -59,11 +60,16 @@ function eval_loss(state::ArrayReg, model1::AbstractModel, model2::AbstractModel
     return loss
 end
 
-function eval_full_loss(data::AbstractData, model::AbstractModel; lambda=1.::Float64, regularization=:nothing::Symbol)
+function eval_full_loss(data::AbstractData, model::Union{AbstractModel, NTuple{2, AbstractModel}}; lambda=1.::Float64, regularization=:nothing::Symbol)
     total_loss = 0
     for i in eachindex(data.states)
         loss = eval_loss(data.states[i], model; lambda=lambda, regularization=regularization)
-        total_loss += (model.activation(loss)-data.labels[i])^2
+        if typeof(model) <: NTuple{2, AbstractModel}
+            model1, _ = model
+            total_loss += (model1.activation(loss)-data.labels[i])^2
+        else
+            total_loss += (model.activation(loss)-data.labels[i])^2
+        end
     end
     total_loss *= 1/length(data.states)
     return total_loss
