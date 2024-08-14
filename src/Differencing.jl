@@ -23,14 +23,13 @@ function covariance(output::Symbol, state::Union{ArrayReg, Pair}, obs_A::Union{C
         _, dBA = expect'(obs_B * obs_A, state)
         dAB_sym = (dAB + dBA) / 2
         return sign(AB_sym - A * B) * (dAB_sym - (A * dB + B * dA))
-        # return [sign(AB_sym - A*B), [(obs_A*obs_B + obs_B*obs_A)/2], [-obs_A, obs_B]]
     end
 end
 
 function covariance_siamese(state1::ArrayReg, state2::ArrayReg, obs_A::Union{ChainBlock, Add}, obs_B::Union{ChainBlock, Add})
     n = nqubits(state1)
     joined_state = join(state2, state1)
-    A = sandwich(joined_state, circ_swap_all(2n) * obs_A, joined_state)
+    A = sandwich(joined_state, circ_swap_all(2n) * obs_A, joined_state) # expect(circle_swap_all(2n) * obs_A, joined_state) is not REAL because the swap and obs_A do not commute
     B = sandwich(joined_state, circ_swap_all(2n) * obs_B, joined_state)
     AB = sandwich(joined_state, circ_swap_all(2n) * obs_A * obs_B, joined_state)
     BA = sandwich(joined_state, circ_swap_all(2n) * obs_B * obs_A, joined_state)
@@ -45,15 +44,14 @@ function covariance_siamese_normalized(output::Symbol, state1::Union{ArrayReg, P
     BA = sandwich(state1, obs_B * obs_A, state2)
     AB_sym = (AB + BA) / 2
     if output == :loss
-        return abs(AB_sym - A*B)
+        return real(AB_sym - A*B)
     elseif output == :grad
         dA = parameter_shift_rule(obs_A, state1, state2, model)
         dB = parameter_shift_rule(obs_B, state1, state2, model)
         dAB = parameter_shift_rule(obs_A * obs_B, state1, state2, model)
         dBA = parameter_shift_rule(obs_B * obs_A, state1, state2, model)
         dAB_sym = (dAB + dBA) / 2
-        return sign(AB_sym - A * B) * (dAB_sym - (A * dB + B * dA))
-        # return [sign(AB_sym - A*B), [(obs_A*obs_B + obs_B*obs_A)/2], [-obs_A, obs_B]]
+        return real(dAB_sym - (A * dB + B * dA))
     end
 end
 

@@ -38,7 +38,7 @@ end
 function eval_grad(state::ArrayReg, model::AbstractModel, cost::CircuitCost; lambda=1.::Float64, regularization=:nothing::Symbol)
     circ = model.circ
     dispatch!(circ, expand_params(model))
-    _, grads = expect'(cost.cost(model.n), copy(state)=>circ)
+    _, grads = expect'(cost.cost(model.n), copy(state) => circ)
     grads = convert.(Float64, grads)
     grads = regularize_grads(grads, model; lambda=lambda, regularization=regularization)
     return grads
@@ -49,7 +49,7 @@ function eval_grad(states::NTuple{2, ArrayReg}, model::AbstractModel, cost::Gene
     circ = model.circ
     p_expanded = expand_params(model)
     dispatch!(circ, p_expanded)
-    grads = cost.cost(:grad, copy(state1) => circ, copy(state2) => circ; model=model)
+    grads = cost.cost(:grad, copy(state1) |> circ, copy(state2) |> circ; model=model) # => does not work with sandwich function (ok because we use parameter_shift_rule function, not expect')
     grads = convert.(Float64, grads)
     return grads
 end
