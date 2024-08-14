@@ -1,14 +1,33 @@
 # Export
 export covariance,
-       covariance_normalized,
+       covariance_siamese,
+       covariance_siamese_normalized,
        projected_quantum_kernel,
        swap_test,
        destructive_swap_test,
        entanglement_difference,
-       overlap,
-       covariance_XZ
+       overlap
 
-function covariance(state1::ArrayReg, state2::ArrayReg, obs_A::Union{ChainBlock, Add}, obs_B::Union{ChainBlock, Add})
+function covariance(output::Symbol, state::Union{ArrayReg, Pair}, obs_A::Union{ChainBlock, Add}, obs_B::Union{ChainBlock, Add})
+    A = expect(obs_A, state)
+    B = expect(obs_B, state)
+    AB = expect(obs_A * obs_B, state)
+    BA = expect(obs_B * obs_A, state)
+    AB_sym = (AB + BA) / 2
+    if output == :loss
+        return abs(AB_sym - A*B)
+    elseif output == :grad
+        _, dA = expect'(obs_A, state)
+        _, dB = expect'(obs_B, state)
+        _, dAB = expect'(obs_A * obs_B, state)
+        _, dBA = expect'(obs_B * obs_A, state)
+        dAB_sym = (dAB + dBA) / 2
+        return sign(AB_sym - A * B) * (dAB_sym - (A * dB + B * dA))
+        # return [sign(AB_sym - A*B), [(obs_A*obs_B + obs_B*obs_A)/2], [-obs_A, obs_B]]
+    end
+end
+
+function covariance_siamese(state1::ArrayReg, state2::ArrayReg, obs_A::Union{ChainBlock, Add}, obs_B::Union{ChainBlock, Add})
     n = nqubits(state1)
     joined_state = join(state2, state1)
     A = sandwich(joined_state, circ_swap_all(2n) * obs_A, joined_state)
@@ -19,22 +38,23 @@ function covariance(state1::ArrayReg, state2::ArrayReg, obs_A::Union{ChainBlock,
     return AB_sym - A*B
 end
 
-function covariance_normalized(state1::ArrayReg, state2::ArrayReg, obs_A::Union{ChainBlock, Add}, obs_B::Union{ChainBlock, Add})
-    n = nqubits(state1)
+function covariance_siamese_normalized(output::Symbol, state1::Union{ArrayReg, Pair}, state2::Union{ArrayReg, Pair}, obs_A::Union{ChainBlock, Add}, obs_B::Union{ChainBlock, Add}; model=nothing::Union{AbstractModel, Nothing})
     A = sandwich(state1, obs_A, state2)
     B = sandwich(state1, obs_B, state2)
     AB = sandwich(state1, obs_A * obs_B, state2)
     BA = sandwich(state1, obs_B * obs_A, state2)
     AB_sym = (AB + BA) / 2
-    return AB_sym - A*B
-end
-
-function covariance_XZ(state::ArrayReg)
-    n = nqubits(state)
-    cost1 = expect(circ_X(n), copy(state)) * expect(circ_Z(n, (n÷2)+1), copy(state))
-    cost2 = expect(circ_X(n) * circ_Z(n, (n÷2)+1), copy(state))
-    cost = abs(cost2 - cost1)
-    return cost
+    if output == :loss
+        return abs(AB_sym - A*B)
+    elseif output == :grad
+        dA = parameter_shift_rule(obs_A, state1, state2, model)
+        dB = parameter_shift_rule(obs_B, state1, state2, model)
+        dAB = parameter_shift_rule(obs_A * obs_B, state1, state2, model)
+        dBA = parameter_shift_rule(obs_B * obs_A, state1, state2, model)
+        dAB_sym = (dAB + dBA) / 2
+        return sign(AB_sym - A * B) * (dAB_sym - (A * dB + B * dA))
+        # return [sign(AB_sym - A*B), [(obs_A*obs_B + obs_B*obs_A)/2], [-obs_A, obs_B]]
+    end
 end
 
 function projected_quantum_kernel(state1::ArrayReg, state2::ArrayReg; gamma=1.::Float64) # S110 in huang2021power
@@ -44,8 +64,8 @@ function projected_quantum_kernel(state1::ArrayReg, state2::ArrayReg; gamma=1.::
     for pauli_op in pauli_basis
         for i in 1:n
             circ = circ_gate_single(n, i, pauli_op)
-            exp_value1 = expect(circ, copy(state1))
-            exp_value2 = expect(circ, copy(state2))
+            exp_value1 = expect(circ, state1)
+            exp_value2 = expect(circ, state2)
             summ += (exp_value1 - exp_value2)^2
         end
     end
