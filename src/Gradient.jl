@@ -9,14 +9,14 @@ function parameter_shift_rule(obs::Union{ChainBlock, Add}, state1::ArrayReg, sta
     p_expanded = expand_params(model)
     p_plus = deepcopy(p_expanded)
     p_minus = deepcopy(p_expanded)
-    grads = similar(p_expanded)
+    grads = similar(p_expanded, ComplexF64) # change to ComplexF64 because of sandwich function
     for i in eachindex(p_expanded)
         p_plus[i] += epsilon
         p_minus[i] -= epsilon
         dispatch!(circ, p_plus)
-        cost_plus = sandwich(state1, obs, state2)
+        cost_plus = sandwich(copy(state1) |> circ, obs, copy(state2) |> circ)
         dispatch!(circ, p_minus)
-        cost_minus = sandwich(state1, obs, state2)
+        cost_minus = sandwich(copy(state1) |> circ, obs, copy(state2) |> circ)
         grads[i] = epsilon == π/2 ? (cost_plus-cost_minus)/2 : (cost_plus-cost_minus)/(2*epsilon)
         p_plus[i] = p_expanded[i]
         p_minus[i] = p_expanded[i]
@@ -51,6 +51,7 @@ function eval_grad(states::NTuple{2, ArrayReg}, model::AbstractModel, cost::Gene
     dispatch!(circ, p_expanded)
     grads = cost.cost(:grad, copy(state1) |> circ, copy(state2) |> circ; model=model) # => does not work with sandwich function (ok because we use parameter_shift_rule function, not expect')
     grads = convert.(Float64, grads)
+    grads = regularize_grads(grads, model; lambda=lambda, regularization=regularization)
     return grads
 end
 
@@ -64,6 +65,8 @@ function eval_grad(state::ArrayReg, models::NTuple{2, AbstractModel}, cost::Gene
     dispatch!(circ_full, p_expanded_full)
     grads = cost.cost(:grad, copy(state) => circ_full)
     grads = convert.(Float64, grads)
+    grads = regularize_grads(grads, model1; lambda=lambda, regularization=regularization)
+    grads = regularize_grads(grads, model2; lambda=lambda, regularization=regularization)
     return grads
 end
 

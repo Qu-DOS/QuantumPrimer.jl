@@ -66,8 +66,6 @@ function train_test_model(data1::AbstractData,
                           regularization=:nothing::Symbol,
                           verbose=false::Bool)
     model1, model2 = models
-    # opt1 = Optimisers.setup(optim, model1.params)
-    # opt2 = Optimisers.setup(optim, model2.params)
     all_params = vcat(model1.params, model2.params)
     opt = Optimisers.setup(optim, all_params)
     loss_track = Float64[]
@@ -82,8 +80,6 @@ function train_test_model(data1::AbstractData,
     append!(te_track, te_acc)
     intervals = collect(0:20:iters)
     for i in 1:iters
-        # Optimisers.update!(opt1, model1.params, eval_full_grad(data1, models, cost, 1; lambda=lambda, regularization=regularization))
-        # Optimisers.update!(opt2, model2.params, eval_full_grad(data1, models, cost, 2; lambda=lambda, regularization=regularization))
         Optimisers.update!(opt, all_params, eval_full_grad(data1, models, cost; lambda=lambda, regularization=regularization))
         model1.params = all_params[1:length(model1.params)]
         model2.params = all_params[length(model1.params)+1:end]
@@ -101,6 +97,5 @@ function train_test_model(data1::AbstractData,
         end
     end
     println("Final: loss = $(loss_track[end]), tr_acc = $(tr_track[end]), te_acc = $(te_track[end])")
-    # return model1.params, model2.params, loss_track, tr_track, te_track, tr_preds, te_preds
     return model1.params, model2.params, loss_track, tr_track, te_track, tr_preds, te_preds
 end

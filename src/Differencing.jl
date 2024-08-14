@@ -44,14 +44,14 @@ function covariance_siamese_normalized(output::Symbol, state1::Union{ArrayReg, P
     BA = sandwich(state1, obs_B * obs_A, state2)
     AB_sym = (AB + BA) / 2
     if output == :loss
-        return real(AB_sym - A*B)
+        return AB_sym - A*B
     elseif output == :grad
         dA = parameter_shift_rule(obs_A, state1, state2, model)
         dB = parameter_shift_rule(obs_B, state1, state2, model)
         dAB = parameter_shift_rule(obs_A * obs_B, state1, state2, model)
         dBA = parameter_shift_rule(obs_B * obs_A, state1, state2, model)
         dAB_sym = (dAB + dBA) / 2
-        return real(dAB_sym - (A * dB + B * dA))
+        return dAB_sym - (A * dB + B * dA)
     end
 end
 
