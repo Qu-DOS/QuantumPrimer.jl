@@ -4,6 +4,26 @@ export parameter_shift_rule,
        eval_grad,
        eval_full_grad
 
+function parameter_shift_rule(obs::Union{ChainBlock, Add}, state::ArrayReg, model::AbstractModel; epsilon=(π/2)::Float64)
+    circ = model.circ
+    p_expanded = expand_params(model)
+    p_plus = deepcopy(p_expanded)
+    p_minus = deepcopy(p_expanded)
+    grads = similar(p_expanded, ComplexF64) # change to ComplexF64 because of sandwich function
+    for i in eachindex(p_expanded)
+        p_plus[i] += epsilon
+        p_minus[i] -= epsilon
+        dispatch!(circ, p_plus)
+        cost_plus = expect(obs, copy(state) |> circ)
+        dispatch!(circ, p_minus)
+        cost_minus = expect(obs, copy(state) |> circ)
+        grads[i] = epsilon == π/2 ? (cost_plus-cost_minus)/2 : (cost_plus-cost_minus)/(2*epsilon)
+        p_plus[i] = p_expanded[i]
+        p_minus[i] = p_expanded[i]
+    end
+    return grads
+end
+
 function parameter_shift_rule(obs::Union{ChainBlock, Add}, state1::ArrayReg, state2::ArrayReg, model::AbstractModel; epsilon=(π/2)::Float64)
     circ = model.circ
     p_expanded = expand_params(model)
@@ -49,8 +69,18 @@ function eval_grad(states::NTuple{2, ArrayReg}, model::AbstractModel, cost::Gene
     circ = model.circ
     p_expanded = expand_params(model)
     dispatch!(circ, p_expanded)
-    grads = cost.cost(:grad, copy(state1) |> circ, copy(state2) |> circ; model=model) # => does not work with sandwich function (ok because we use parameter_shift_rule function, not expect')
+    grads = cost.cost(:grad, copy(state1) => circ, copy(state2) => circ; model=model)
     grads = convert.(Float64, grads)
+    grads = grads[1:length(p_expanded)]
+    # grads1 = grads[1:length(p_expanded)]
+    # grads2 = grads[length(p_expanded)+1:end]
+    # grads = (grads1 + grads2) / 2
+    # println(grads1)
+    # println(grads2)
+    # println(grads)
+    # println("Length of model params: ", length(model.params))
+    # println("Length of grads: ", length(grads))
+    # println("Length of p_expanded: ", length(p_expanded))
     grads = regularize_grads(grads, model; lambda=lambda, regularization=regularization)
     return grads
 end

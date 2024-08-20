@@ -26,15 +26,33 @@ function covariance(output::Symbol, state::Union{ArrayReg, Pair}, obs_A::Union{C
     end
 end
 
-function covariance_siamese(state1::ArrayReg, state2::ArrayReg, obs_A::Union{ChainBlock, Add}, obs_B::Union{ChainBlock, Add})
-    n = nqubits(state1)
-    joined_state = join(state2, state1)
-    A = sandwich(joined_state, circ_swap_all(2n) * obs_A, joined_state) # expect(circle_swap_all(2n) * obs_A, joined_state) is not REAL because the swap and obs_A do not commute
-    B = sandwich(joined_state, circ_swap_all(2n) * obs_B, joined_state)
-    AB = sandwich(joined_state, circ_swap_all(2n) * obs_A * obs_B, joined_state)
-    BA = sandwich(joined_state, circ_swap_all(2n) * obs_B * obs_A, joined_state)
-    AB_sym = (AB + BA) / 2
-    return AB_sym - A*B
+function covariance_siamese(output::Symbol, state1::Union{ArrayReg, Pair}, state2::Union{ArrayReg, Pair}, obs_A::Union{ChainBlock, Add}, obs_B::Union{ChainBlock, Add}; model=nothing::Union{AbstractModel, Nothing})
+    n = 0
+    try
+        n = nqubits(state1)
+    catch
+        n = nqubits(state1[1])
+    end
+    if output == :loss
+        joined_state = join(state2, state1)
+        A = expect(circ_swap_all(2n) * obs_A, joined_state) # NB: depending on obs_A, SWAP and obs_A may not commute, thus circ_swap_all(2n) * obs_A is not Hermitian
+        B = expect(circ_swap_all(2n) * obs_B, joined_state)
+        AB = expect(circ_swap_all(2n) * obs_A * obs_B, joined_state)
+        BA = expect(circ_swap_all(2n) * obs_B * obs_A, joined_state)
+        AB_sym = (AB + BA) / 2
+        return AB_sym - A*B
+    elseif output == :grad
+        circ_full = chain(2n, put(1:n => state1[2]), put(n+1:2n => state2[2]))
+        joined_state = join(state2[1], state1[1])
+        A = expect(circ_swap_all(2n) * obs_A, joined_state |> circ_full) # NB: depending on obs_A, SWAP and obs_A may not commute, thus circ_swap_all(2n) * obs_A is not Hermitian
+        B = expect(circ_swap_all(2n) * obs_B, joined_state |> circ_full)
+        _, dA = expect'(circ_swap_all(2n) * obs_A, joined_state => circ_full)
+        _, dB = expect'(circ_swap_all(2n) * obs_B, joined_state => circ_full)
+        _, dAB = expect'(circ_swap_all(2n) * obs_A * obs_B, joined_state => circ_full)
+        _, dBA = expect'(circ_swap_all(2n) * obs_B * obs_A, joined_state => circ_full)
+        dAB_sym = (dAB + dBA) / 2
+        return dAB_sym - (A * dB + B * dA)
+    end
 end
 
 function covariance_siamese_normalized(output::Symbol, state1::Union{ArrayReg, Pair}, state2::Union{ArrayReg, Pair}, obs_A::Union{ChainBlock, Add}, obs_B::Union{ChainBlock, Add}; model=nothing::Union{AbstractModel, Nothing})
