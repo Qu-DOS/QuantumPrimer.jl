@@ -30,20 +30,24 @@ function eval_loss(state::ArrayReg, model::AbstractModel, cost::CircuitCost; lam
     return loss
 end
 
+function eval_loss(states::NTuple{2, ArrayReg}, models::NTuple{2, AbstractModel}, cost::CircuitCost; lambda=1.::Float64, regularization=:nothing::Symbol)
+    state1, state2 = states
+    model1, model2 = models
+    n = model1.n
+    circ_full = chain(2n, put(1:n => model1.circ + model2.circ), put(n+1:2n => model1.circ + model2.circ))
+    dispatch!(model1.circ, expand_params(model1))
+    dispatch!(model2.circ, expand_params(model2))
+    loss = expect(cost.cost(2n), join(state2, state1) |> circ_full)
+    loss = regularize_loss(loss, model1; lambda=lambda, regularization=regularization)
+    loss = regularize_loss(loss, model2; lambda=lambda, regularization=regularization)
+    return loss
+end
+
 function eval_loss(states::NTuple{2, ArrayReg}, model::AbstractModel, cost::GeneralCost; lambda=1.::Float64, regularization=:nothing::Symbol)
     state1, state2 = states
     circ = model.circ
     dispatch!(circ, expand_params(model))
     loss = cost.cost(:loss, copy(state1) |> circ, copy(state2) |> circ)
-    loss = regularize_loss(loss, model; lambda=lambda, regularization=regularization)
-    return loss
-end
-
-function eval_loss(states::NTuple{2, ArrayReg}, model::AbstractModel, cost::CircuitCost; lambda=1.::Float64, regularization=:nothing::Symbol)
-    state1, state2 = states
-    circ = model.circ
-    dispatch!(circ, expand_params(model))
-    loss = real(sandwich(copy(state1) |> circ, cost.cost, copy(state2) |> circ))
     loss = regularize_loss(loss, model; lambda=lambda, regularization=regularization)
     return loss
 end

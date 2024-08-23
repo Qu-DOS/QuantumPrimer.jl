@@ -1,12 +1,11 @@
 # Export
 export covariance,
        covariance_siamese,
-       covariance_siamese_normalized,
+       covariance_siamese_commuting_obs,
        projected_quantum_kernel,
        swap_test,
        destructive_swap_test,
-       entanglement_difference,
-       overlap
+       entanglement_difference
 
 function covariance(output::Symbol, state::Union{ArrayReg, Pair}, obs_A::Union{ChainBlock, Add}, obs_B::Union{ChainBlock, Add})
     A = expect(obs_A, state)
@@ -26,7 +25,8 @@ function covariance(output::Symbol, state::Union{ArrayReg, Pair}, obs_A::Union{C
     end
 end
 
-function covariance_siamese(output::Symbol, state1::Union{ArrayReg, Pair}, state2::Union{ArrayReg, Pair}, obs_A::Union{ChainBlock, Add}, obs_B::Union{ChainBlock, Add}; model=nothing::Union{AbstractModel, Nothing})
+function covariance_siamese_commuting_obs(output::Symbol, state1::Union{ArrayReg, Pair}, state2::Union{ArrayReg, Pair}, obs_A::Union{ChainBlock, Add}, obs_B::Union{ChainBlock, Add}; model=nothing::Union{AbstractModel, Nothing})
+    # If the observables commute, the covariance can be computed as usual - obs * SWAP is Hermitian and can perform expectation value
     n = 0
     try
         n = nqubits(state1)
@@ -50,24 +50,6 @@ function covariance_siamese(output::Symbol, state1::Union{ArrayReg, Pair}, state
         _, dB = expect'(circ_swap_all(2n) * obs_B, copy(joined_state) => circ_full)
         _, dAB = expect'(circ_swap_all(2n) * obs_A * obs_B, copy(joined_state) => circ_full)
         _, dBA = expect'(circ_swap_all(2n) * obs_B * obs_A, copy(joined_state) => circ_full)
-        dAB_sym = (dAB + dBA) / 2
-        return dAB_sym - (A * dB + B * dA)
-    end
-end
-
-function covariance_siamese_normalized(output::Symbol, state1::Union{ArrayReg, Pair}, state2::Union{ArrayReg, Pair}, obs_A::Union{ChainBlock, Add}, obs_B::Union{ChainBlock, Add}; model=nothing::Union{AbstractModel, Nothing})
-    A = sandwich(state1, obs_A, state2)
-    B = sandwich(state1, obs_B, state2)
-    AB = sandwich(state1, obs_A * obs_B, state2)
-    BA = sandwich(state1, obs_B * obs_A, state2)
-    AB_sym = (AB + BA) / 2
-    if output == :loss
-        return AB_sym - A*B
-    elseif output == :grad
-        dA = parameter_shift_rule(obs_A, state1, state2, model)
-        dB = parameter_shift_rule(obs_B, state1, state2, model)
-        dAB = parameter_shift_rule(obs_A * obs_B, state1, state2, model)
-        dBA = parameter_shift_rule(obs_B * obs_A, state1, state2, model)
         dAB_sym = (dAB + dBA) / 2
         return dAB_sym - (A * dB + B * dA)
     end
@@ -115,10 +97,6 @@ function destructive_swap_test(state1::ArrayReg, state2::ArrayReg; nshots=1000::
     res = 1 - 2*P_fail
     res = res > 0 ? res : 0
     return res
-end
-
-function overlap(state1::ArrayReg, state2::ArrayReg)
-    return abs2(dot(state1.state, state2.state))
 end
 
 function entanglement_difference(state1::ArrayReg, state2::ArrayReg)

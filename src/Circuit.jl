@@ -2,12 +2,17 @@
 export circ_gate_single,
        circ_gate_n,
        circ_gate_sum,
+       circ_gate_where,
        circ_block_single,
        circ_block_n,
        circ_block_sum,
+       circ_block_where,
        circ_X,
        circ_Y,
        circ_Z,
+       circ_X_where,
+       circ_Y_where,
+       circ_Z_where,
        circ_Xn,
        circ_Yn,
        circ_Zn,
@@ -24,26 +29,34 @@ export circ_gate_single,
        circ_HEA,
        circ_phase_flip,
        circ_hypergraph_state,
+       circ_swap_decomposed,
        circ_swap_all,
        circ_swap_test,
-       circ_destructive_swap_test
+       circ_destructive_swap_test,
+       circ_obs_times_swap,
+       circ_LCU
 
 circ_gate_single(n::Int, i::Int, gate::ConstantGate) = chain(n, put(i=>gate))
 circ_gate_n(n::Int, gate::ConstantGate) = chain(n, put(i=>gate) for i=1:n)
 circ_gate_sum(n::Int, gate::ConstantGate) = sum(chain(n, put(i=>gate) for i=1:n))
+circ_gate_where(n::Int, gate::ConstantGate, ones_where::Vector{Int}) = chain(n, put(i=>gate) for i in ones_where)
 
 circ_block_single(n::Int, i::Int, block::ChainBlock{2}) = chain(n, put(i=>block))
 circ_block_n(n::Int, block::ChainBlock{2}) = chain(n, put(i=>block) for i=1:n)
 circ_block_sum(n::Int, block::ChainBlock{2}) = sum(chain(n, put(i=>block) for i=1:n))
+circ_block_where(n::Int, block::ChainBlock{2}, ones_where::Vector{Int}) = chain(n, put(i=>block) for i in ones_where)
 
 circ_X(n::Int, i::Int) = circ_gate_single(n, i, X)
 circ_X(n::Int) = circ_gate_single(n, 1, X)
+circ_X_where(n::Int, ones_where::Vector{Int}) = circ_gate_where(n, X, ones_where)
 
 circ_Y(n::Int, i::Int) = circ_gate_single(n, i, Y)
 circ_Y(n::Int) = circ_gate_single(n, 1, Y)
+circ_Y_where(n::Int, ones_where::Vector{Int}) = circ_gate_where(n, Y, ones_where)
 
 circ_Z(n::Int, i::Int) = circ_gate_single(n, i, Z)
 circ_Z(n::Int) = circ_gate_single(n, 1, Z)
+circ_Z_where(n::Int, ones_where::Vector{Int}) = circ_gate_where(n, Z, ones_where)
 
 circ_Xn(n::Int) = chain(n, put(i=>X) for i=1:n)
 circ_Yn(n::Int) = chain(n, put(i=>Y) for i=1:n)
@@ -97,14 +110,17 @@ function circ_hypergraph_state(vec::Vector{Int})
     return circ
 end
 
-function circ_swap_all(n::Int)
+function circ_swap_decomposed(n::Int, i::Int, j::Int)
+    return sum(chain(n, put(i=>ele/sqrt(2)), put(j=>ele/sqrt(2))) for ele in [I2, X, Y, Z])
+end
+ 
+function circ_swap_all(n::Int; decompose::Bool=false)
     isodd(n) ? error("n must be even") : nothing
-    circ = chain(n)
-    m = n÷2
-    for i in 1:m
-        push!(circ, swap(i, m+i))
+    if decompose
+        return chain(n, put((i, n÷2+i) => circ_swap_decomposed(n, i, n÷2+1)) for i in 1:n÷2)
+    else
+        return chain(n, put((i, n÷2+i) => SWAP) for i in 1:n÷2)
     end
-    return circ
 end
 
 function circ_swap_test(n::Int)
@@ -123,5 +139,28 @@ function circ_destructive_swap_test(n::Int)
         push!(circ, control(i, n+i=>X))
         push!(circ, put(i=>H))
     end
+    return circ
+end
+
+function circ_obs_times_swap(n::Int, obs::Union{ChainBlock, Add})
+    paulis = [I2, X, Y, Z]
+    n_paulis = length(paulis)
+    cartesian_product = Base.Iterators.product(ntuple(i -> 1:n_paulis, 2n)...) # uses decomposition: SWAP = (I2⊗I2 + X⊗X + Y⊗Y + Z⊗Z) / 2
+    circ = sum(chain(chain(2n, put(i => paulis[ele[i]]) for i in eachindex(ele)), obs) for ele in cartesian_product)
+    return circ
+end
+
+function circ_LCU(n::Int, U_vec::Vector{ChainBlock}; initial_layer::Bool=true, final_layer::Bool=true)
+    n_ancillas = Int(ceil(log(2, length(U_vec))))
+    K = length(U_vec)
+    N = n + n_ancillas
+    circ = chain(N)
+    initial_layer ? push!(circ, chain(N, put(i => H) for i = 1:n_ancillas)) : nothing
+    for k = 0:K-1
+        push!(circ, chain(N, put(1:n_ancillas => circ_X_where(n_ancillas, findall(j -> j == 0, digits(k, base=2, pad=n_ancillas))))))
+        push!(circ, control(1:n_ancillas, n_ancillas+1:N => U_vec[k+1])) # NB: U_vec is 1-indexed
+        push!(circ, chain(N, put(1:n_ancillas => circ_X_where(n_ancillas, findall(j -> j == 0, digits(k, base=2, pad=n_ancillas))))))
+    end
+    final_layer ? push!(circ, chain(N, put(i => H) for i = 1:n_ancillas)) : nothing
     return circ
 end

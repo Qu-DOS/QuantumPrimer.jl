@@ -64,6 +64,24 @@ function eval_grad(state::ArrayReg, model::AbstractModel, cost::CircuitCost; lam
     return grads
 end
 
+function eval_grad(states::NTuple{2, ArrayReg}, models::NTuple{2, AbstractModel}, cost::CircuitCost; lambda=1.::Float64, regularization=:nothing::Symbol)
+    state1, state2 = states
+    model1, model2 = models
+    n = model1.n
+    circ_full = chain(2n, put(1:n => model1.circ + model2.circ), put(n+1:2n => model1.circ + model2.circ))
+    p_expanded1 = expand_params(model1)
+    p_expanded2 = expand_params(model2)
+    p_expanded_full = vcat(p_expanded1, p_expanded2, p_expanded1, p_expanded2)
+    dispatch!(circ_full, p_expanded_full)
+    _, grads = expect'(cost.cost(2n), join(state2, state1) => circ_full)
+    # grads = cost.cost(:grad, join(state2, state1) => circ_full)
+    grads = convert.(Float64, grads)
+    grads = regularize_grads(grads, model1; lambda=lambda, regularization=regularization)
+    grads = regularize_grads(grads, model2; lambda=lambda, regularization=regularization)
+    avg_grads = (grads[1:length(p_expanded_full)÷2] + grads[length(p_expanded_full)÷2+1:end]) / 2
+    return avg_grads
+end
+
 function eval_grad(states::NTuple{2, ArrayReg}, model::AbstractModel, cost::GeneralCost; epsilon=(π/2)::Float64, lambda=1.::Float64, regularization=:nothing::Symbol)
     state1, state2 = states
     circ = model.circ
@@ -72,15 +90,6 @@ function eval_grad(states::NTuple{2, ArrayReg}, model::AbstractModel, cost::Gene
     grads = cost.cost(:grad, copy(state1) => circ, copy(state2) => circ; model=model)
     grads = convert.(Float64, grads)
     grads = grads[1:length(p_expanded)]
-    # grads1 = grads[1:length(p_expanded)]
-    # grads2 = grads[length(p_expanded)+1:end]
-    # grads = (grads1 + grads2) / 2
-    # println(grads1)
-    # println(grads2)
-    # println(grads)
-    # println("Length of model params: ", length(model.params))
-    # println("Length of grads: ", length(grads))
-    # println("Length of p_expanded: ", length(p_expanded))
     grads = regularize_grads(grads, model; lambda=lambda, regularization=regularization)
     return grads
 end
