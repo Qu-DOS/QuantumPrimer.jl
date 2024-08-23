@@ -44,12 +44,12 @@ function covariance_siamese(output::Symbol, state1::Union{ArrayReg, Pair}, state
     elseif output == :grad
         circ_full = chain(2n, put(1:n => state1[2]), put(n+1:2n => state2[2]))
         joined_state = join(state2[1], state1[1])
-        A = expect(circ_swap_all(2n) * obs_A, joined_state |> circ_full) # NB: depending on obs_A, SWAP and obs_A may not commute, thus circ_swap_all(2n) * obs_A is not Hermitian
-        B = expect(circ_swap_all(2n) * obs_B, joined_state |> circ_full)
-        _, dA = expect'(circ_swap_all(2n) * obs_A, joined_state => circ_full)
-        _, dB = expect'(circ_swap_all(2n) * obs_B, joined_state => circ_full)
-        _, dAB = expect'(circ_swap_all(2n) * obs_A * obs_B, joined_state => circ_full)
-        _, dBA = expect'(circ_swap_all(2n) * obs_B * obs_A, joined_state => circ_full)
+        A = expect(circ_swap_all(2n) * obs_A, copy(joined_state) |> circ_full) # NB: depending on obs_A, SWAP and obs_A may not commute, thus circ_swap_all(2n) * obs_A is not Hermitian
+        B = expect(circ_swap_all(2n) * obs_B, copy(joined_state) |> circ_full)
+        _, dA = expect'(circ_swap_all(2n) * obs_A, copy(joined_state) => circ_full)
+        _, dB = expect'(circ_swap_all(2n) * obs_B, copy(joined_state) => circ_full)
+        _, dAB = expect'(circ_swap_all(2n) * obs_A * obs_B, copy(joined_state) => circ_full)
+        _, dBA = expect'(circ_swap_all(2n) * obs_B * obs_A, copy(joined_state) => circ_full)
         dAB_sym = (dAB + dBA) / 2
         return dAB_sym - (A * dB + B * dA)
     end
