@@ -1,6 +1,7 @@
 export haar_random_unitary,
        circ_haar_random_unitary,
-       wasserstein_distance
+       wasserstein_distance,
+       single_qubit_flip
 
 function haar_random_unitary(n::Int) # mezzadri2007generate math-ph/0609050
     U = randn(ComplexF64, n, n) + im*randn(ComplexF64, n, n)
@@ -25,3 +26,6 @@ function wasserstein_distance(p::Vector{Float64}, q::Vector{Float64})
     distance = sum(abs.(cdf_p .- cdf_q))
     return distance
 end
+
+#Places bitflips at specific locations
+single_qubit_flip(n, op, ones_where) = chain(n, put(i => op) for i in ones_where)

@@ -26,6 +26,7 @@ export circ_gate_single,
        circ_Ry_layer,
        circ_Rz_layer,
        circ_CNOT_layer,
+       circ_CZ_layer,
        circ_HEA,
        circ_phase_flip,
        circ_hypergraph_state,
@@ -84,6 +85,8 @@ circ_Ry_layer(n::Int) = chain(n, put(i=>Ry(0)) for i=1:n)
 circ_Rz_layer(n::Int) = chain(n, put(i=>Rz(0)) for i=1:n)
 
 circ_CNOT_layer(n::Int) = chain(n, control(i, mod(i, n) + 1 => X) for i=1:n)
+
+circ_CZ_layer(n::Int) = chain(n, control(i, mod(i, n) + 1 => Z) for i=1:n)
 
 function circ_HEA(n::Int)
     circ = chain(n)
