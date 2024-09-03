@@ -1,42 +1,69 @@
 # Export
 export covariance,
-       covariance_normalized,
+       covariance_siamese,
+       covariance_siamese_commuting_obs,
        projected_quantum_kernel,
        swap_test,
        destructive_swap_test,
-       entanglement_difference,
-       overlap
+       entanglement_difference
 
-function covariance(state1::ArrayReg, state2::ArrayReg, obs_A::Union{ChainBlock, Add}, obs_B::Union{ChainBlock, Add})
-    n = nqubits(state1)
-    joined_state = join(state2, state1)
-    A = sandwich(joined_state, circ_swap_all(2n) * obs_A, joined_state)
-    B = sandwich(joined_state, circ_swap_all(2n) * obs_B, joined_state)
-    AB = sandwich(joined_state, circ_swap_all(2n) * obs_A * obs_B, joined_state)
-    BA = sandwich(joined_state, circ_swap_all(2n) * obs_B * obs_A, joined_state)
+function covariance(output::Symbol, state::Union{ArrayReg, Pair}, obs_A::Union{ChainBlock, Add}, obs_B::Union{ChainBlock, Add})
+    A = expect(obs_A, state)
+    B = expect(obs_B, state)
+    AB = expect(obs_A * obs_B, state)
+    BA = expect(obs_B * obs_A, state)
     AB_sym = (AB + BA) / 2
-    return AB_sym - A*B
+    if output == :loss
+        return abs(AB_sym - A*B)
+    elseif output == :grad
+        _, dA = expect'(obs_A, state)
+        _, dB = expect'(obs_B, state)
+        _, dAB = expect'(obs_A * obs_B, state)
+        _, dBA = expect'(obs_B * obs_A, state)
+        dAB_sym = (dAB + dBA) / 2
+        return sign(AB_sym - A * B) * (dAB_sym - (A * dB + B * dA))
+    end
 end
 
-function covariance_normalized(state1::ArrayReg, state2::ArrayReg, obs_A::Union{ChainBlock, Add}, obs_B::Union{ChainBlock, Add})
-    n = nqubits(state1)
-    A = sandwich(state1, obs_A, state2)
-    B = sandwich(state1, obs_B, state2)
-    AB = sandwich(state1, obs_A * obs_B, state2)
-    BA = sandwich(state1, obs_B * obs_A, state2)
-    AB_sym = (AB + BA) / 2
-    return AB_sym - A*B
+function covariance_siamese_commuting_obs(output::Symbol, state1::Union{ArrayReg, Pair}, state2::Union{ArrayReg, Pair}, obs_A::Union{ChainBlock, Add}, obs_B::Union{ChainBlock, Add}; model=nothing::Union{AbstractModel, Nothing})
+    # If the observables commute, the covariance can be computed as usual - obs * SWAP is Hermitian and can perform expectation value
+    n = 0
+    try
+        n = nactive(state1)
+    catch
+        n = nactive(state1[1])
+    end
+    if output == :loss
+        joined_state = join(state2, state1)
+        A = expect(circ_swap_all(2n) * obs_A, joined_state) # NB: depending on obs_A, SWAP and obs_A may not commute, thus circ_swap_all(2n) * obs_A is not Hermitian
+        B = expect(circ_swap_all(2n) * obs_B, joined_state)
+        AB = expect(circ_swap_all(2n) * obs_A * obs_B, joined_state)
+        BA = expect(circ_swap_all(2n) * obs_B * obs_A, joined_state)
+        AB_sym = (AB + BA) / 2
+        return AB_sym - A*B
+    elseif output == :grad
+        circ_full = chain(2n, put(1:n => state1[2]), put(n+1:2n => state2[2]))
+        joined_state = join(state2[1], state1[1])
+        A = expect(circ_swap_all(2n) * obs_A, copy(joined_state) |> circ_full) # NB: depending on obs_A, SWAP and obs_A may not commute, thus circ_swap_all(2n) * obs_A is not Hermitian
+        B = expect(circ_swap_all(2n) * obs_B, copy(joined_state) |> circ_full)
+        _, dA = expect'(circ_swap_all(2n) * obs_A, copy(joined_state) => circ_full)
+        _, dB = expect'(circ_swap_all(2n) * obs_B, copy(joined_state) => circ_full)
+        _, dAB = expect'(circ_swap_all(2n) * obs_A * obs_B, copy(joined_state) => circ_full)
+        _, dBA = expect'(circ_swap_all(2n) * obs_B * obs_A, copy(joined_state) => circ_full)
+        dAB_sym = (dAB + dBA) / 2
+        return dAB_sym - (A * dB + B * dA)
+    end
 end
 
 function projected_quantum_kernel(state1::ArrayReg, state2::ArrayReg; gamma=1.::Float64) # S110 in huang2021power
-    n = nqubits(state1)
+    n = nactive(state1)
     pauli_basis = [X, Y, Z]
     summ = 0
     for pauli_op in pauli_basis
         for i in 1:n
             circ = circ_gate_single(n, i, pauli_op)
-            exp_value1 = expect(circ, copy(state1))
-            exp_value2 = expect(circ, copy(state2))
+            exp_value1 = expect(circ, state1)
+            exp_value2 = expect(circ, state2)
             summ += (exp_value1 - exp_value2)^2
         end
     end
@@ -44,7 +71,7 @@ function projected_quantum_kernel(state1::ArrayReg, state2::ArrayReg; gamma=1.::
 end
 
 function swap_test(state1::ArrayReg, state2::ArrayReg; nshots=1000::Int)
-    n = nqubits(state1)
+    n = nactive(state1)
     circ = circ_swap_test(n)
     measurements = measure(join(state2, state1, zero_state(1)) |> circ, 1; nshots=nshots)
     P0 = count(i->i==0, measurements) / nshots
@@ -55,7 +82,7 @@ function swap_test(state1::ArrayReg, state2::ArrayReg; nshots=1000::Int)
 end
 
 function destructive_swap_test(state1::ArrayReg, state2::ArrayReg; nshots=1000::Int)
-    n = nqubits(state1)
+    n = nactive(state1)
     circ = circ_destructive_swap_test(n)
     measurements = measure(join(state2, state1) |> circ, 1:2n; nshots=nshots)
     P_fail = 0
@@ -72,12 +99,8 @@ function destructive_swap_test(state1::ArrayReg, state2::ArrayReg; nshots=1000::
     return res
 end
 
-function overlap(state1::ArrayReg, state2::ArrayReg)
-    return abs2(dot(state1.state, state2.state))
-end
-
 function entanglement_difference(state1::ArrayReg, state2::ArrayReg)
-    n = nqubits(state1)
+    n = nactive(state1)
     entropy1 = 0
     entropy2 = 0
     for i in 1:n
