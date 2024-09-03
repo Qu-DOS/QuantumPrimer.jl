@@ -55,6 +55,21 @@ function regularize_grads(grads::Vector{Float64}, model::AbstractModel; lambda=1
     return grads
 end
 
+function regularize_grads(grads::Vector{Float64}, models::NTuple{2, AbstractModel}; lambda=1.::Float64, regularization=:nothing::Symbol)
+    model1, model2 = models
+    p_expanded1 = expand_params(model1)
+    p_expanded2 = expand_params(model2)
+    p_expanded_full = vcat(p_expanded1, p_expanded2, p_expanded1, p_expanded2)
+    if regularization == :l1
+        l1 = sign.(p_expanded_full)
+        grads += lambda * l1
+    elseif regularization == :l2
+        l2 = 2*p_expanded_full
+        grads += lambda * l2
+    end
+    return grads
+end
+
 function eval_grad(state::ArrayReg, model::AbstractModel, cost::CircuitCost; lambda=1.::Float64, regularization=:nothing::Symbol)
     circ = model.circ
     dispatch!(circ, expand_params(model))
@@ -76,8 +91,9 @@ function eval_grad(states::NTuple{2, ArrayReg}, models::NTuple{2, AbstractModel}
     _, grads = expect'(cost.cost(2n), join(state2, state1) => circ_full)
     # grads = cost.cost(:grad, join(state2, state1) => circ_full)
     grads = convert.(Float64, grads)
-    grads = regularize_grads(grads, model1; lambda=lambda, regularization=regularization)
-    grads = regularize_grads(grads, model2; lambda=lambda, regularization=regularization)
+    grads = regularize_grads(grads, models; lambda=lambda, regularization=regularization)
+    # grads = regularize_grads(grads, model1; lambda=lambda, regularization=regularization)
+    # grads = regularize_grads(grads, model2; lambda=lambda, regularization=regularization)
     avg_grads = (grads[1:length(p_expanded_full)÷2] + grads[length(p_expanded_full)÷2+1:end]) # can be /2 or not, depending if seen as chain rule or average of same parameters
     return avg_grads
 end
