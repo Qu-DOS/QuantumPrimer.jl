@@ -29,9 +29,9 @@ function covariance_siamese_commuting_obs(output::Symbol, state1::Union{ArrayReg
     # If the observables commute, the covariance can be computed as usual - obs * SWAP is Hermitian and can perform expectation value
     n = 0
     try
-        n = nqubits(state1)
+        n = nactive(state1)
     catch
-        n = nqubits(state1[1])
+        n = nactive(state1[1])
     end
     if output == :loss
         joined_state = join(state2, state1)
@@ -56,7 +56,7 @@ function covariance_siamese_commuting_obs(output::Symbol, state1::Union{ArrayReg
 end
 
 function projected_quantum_kernel(state1::ArrayReg, state2::ArrayReg; gamma=1.::Float64) # S110 in huang2021power
-    n = nqubits(state1)
+    n = nactive(state1)
     pauli_basis = [X, Y, Z]
     summ = 0
     for pauli_op in pauli_basis
@@ -71,7 +71,7 @@ function projected_quantum_kernel(state1::ArrayReg, state2::ArrayReg; gamma=1.::
 end
 
 function swap_test(state1::ArrayReg, state2::ArrayReg; nshots=1000::Int)
-    n = nqubits(state1)
+    n = nactive(state1)
     circ = circ_swap_test(n)
     measurements = measure(join(state2, state1, zero_state(1)) |> circ, 1; nshots=nshots)
     P0 = count(i->i==0, measurements) / nshots
@@ -82,7 +82,7 @@ function swap_test(state1::ArrayReg, state2::ArrayReg; nshots=1000::Int)
 end
 
 function destructive_swap_test(state1::ArrayReg, state2::ArrayReg; nshots=1000::Int)
-    n = nqubits(state1)
+    n = nactive(state1)
     circ = circ_destructive_swap_test(n)
     measurements = measure(join(state2, state1) |> circ, 1:2n; nshots=nshots)
     P_fail = 0
@@ -100,7 +100,7 @@ function destructive_swap_test(state1::ArrayReg, state2::ArrayReg; nshots=1000::
 end
 
 function entanglement_difference(state1::ArrayReg, state2::ArrayReg)
-    n = nqubits(state1)
+    n = nactive(state1)
     entropy1 = 0
     entropy2 = 0
     for i in 1:n
