@@ -78,7 +78,7 @@ function eval_grad(states::NTuple{2, ArrayReg}, models::NTuple{2, AbstractModel}
     grads = convert.(Float64, grads)
     grads = regularize_grads(grads, model1; lambda=lambda, regularization=regularization)
     grads = regularize_grads(grads, model2; lambda=lambda, regularization=regularization)
-    avg_grads = (grads[1:length(p_expanded_full)÷2] + grads[length(p_expanded_full)÷2+1:end]) / 2
+    avg_grads = (grads[1:length(p_expanded_full)÷2] + grads[length(p_expanded_full)÷2+1:end]) # can be /2 or not, depending if seen as chain rule or average of same parameters
     return avg_grads
 end
 
