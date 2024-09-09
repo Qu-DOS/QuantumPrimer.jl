@@ -36,7 +36,7 @@ function train_test_model(data1::AbstractData,
     append!(loss_track, initial_loss)
     append!(tr_track, tr_acc)
     append!(te_track, te_acc)
-    intervals = collect(0:20:iters)
+    intervals = collect(0:iters÷8:iters)
     for i in 1:iters
         Optimisers.update!(opt, model.params, eval_full_grad(data1, model, cost; lambda=lambda, regularization=regularization))
         current_loss = eval_full_loss(data1, model, cost; lambda=lambda, regularization=regularization)
@@ -78,7 +78,7 @@ function train_test_model(data1::AbstractData,
     append!(loss_track, initial_loss)
     append!(tr_track, tr_acc)
     append!(te_track, te_acc)
-    intervals = collect(0:20:iters)
+    intervals = collect(0:iters÷8:iters)
     for i in 1:iters
         Optimisers.update!(opt, all_params, eval_full_grad(data1, models, cost; lambda=lambda, regularization=regularization))
         model1.params = all_params[1:length(model1.params)]
