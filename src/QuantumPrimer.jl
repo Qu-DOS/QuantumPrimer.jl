@@ -20,6 +20,7 @@ include("Gradient.jl");
 include("Differencing.jl");
 include("TrainTest.jl");
 
+include("Graph.jl")
 include("Utils.jl");
 
 include("QSP.jl");
