@@ -7,6 +7,8 @@ using LinearAlgebra
 using Statistics
 using Combinatorics
 using ForwardDiff
+using Kronecker
+using Graphs
 
 include("Circuit.jl");
 include("Data.jl");
