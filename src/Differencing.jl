@@ -1,4 +1,3 @@
-# Export
 export covariance,
        covariance_siamese,
        covariance_siamese_commuting_obs,
@@ -7,6 +6,20 @@ export covariance,
        destructive_swap_test,
        entanglement_difference
 
+"""
+    covariance(output::Symbol, state::Union{ArrayReg, Pair}, obs_A::Union{ChainBlock, Add}, obs_B::Union{ChainBlock, Add}) -> Float64
+
+Computes the covariance between two observables for a given quantum state.
+
+# Arguments
+- `output::Symbol`: Specifies whether to return the loss (`:loss`) or the gradient (`:grad`).
+- `state::Union{ArrayReg, Pair}`: The quantum state.
+- `obs_A::Union{ChainBlock, Add}`: The first observable.
+- `obs_B::Union{ChainBlock, Add}`: The second observable.
+
+# Returns
+- `Float64`: The computed covariance or its gradient.
+"""
 function covariance(output::Symbol, state::Union{ArrayReg, Pair}, obs_A::Union{ChainBlock, Add}, obs_B::Union{ChainBlock, Add})
     A = expect(obs_A, state)
     B = expect(obs_B, state)
@@ -25,6 +38,22 @@ function covariance(output::Symbol, state::Union{ArrayReg, Pair}, obs_A::Union{C
     end
 end
 
+"""
+    covariance_siamese_commuting_obs(output::Symbol, state1::Union{ArrayReg, Pair}, state2::Union{ArrayReg, Pair}, obs_A::Union{ChainBlock, Add}, obs_B::Union{ChainBlock, Add}; model=nothing::Union{AbstractModel, Nothing}) -> Float64
+
+Computes the covariance between two observables for a pair of quantum states, assuming the observables commute.
+
+# Arguments
+- `output::Symbol`: Specifies whether to return the loss (`:loss`) or the gradient (`:grad`).
+- `state1::Union{ArrayReg, Pair}`: The first quantum state.
+- `state2::Union{ArrayReg, Pair}`: The second quantum state.
+- `obs_A::Union{ChainBlock, Add}`: The first observable.
+- `obs_B::Union{ChainBlock, Add}`: The second observable.
+- `model::Union{AbstractModel, Nothing}`: An optional model, default is `nothing`.
+
+# Returns
+- `Float64`: The computed covariance or its gradient.
+"""
 function covariance_siamese_commuting_obs(output::Symbol, state1::Union{ArrayReg, Pair}, state2::Union{ArrayReg, Pair}, obs_A::Union{ChainBlock, Add}, obs_B::Union{ChainBlock, Add}; model=nothing::Union{AbstractModel, Nothing})
     # If the observables commute, the covariance can be computed as usual - obs * SWAP is Hermitian and can perform expectation value
     n = 0
@@ -55,6 +84,19 @@ function covariance_siamese_commuting_obs(output::Symbol, state1::Union{ArrayReg
     end
 end
 
+"""
+    projected_quantum_kernel(state1::ArrayReg, state2::ArrayReg; gamma=1.0::Float64) -> Float64
+
+Computes the projected quantum kernel between two quantum states.
+
+# Arguments
+- `state1::ArrayReg`: The first quantum state.
+- `state2::ArrayReg`: The second quantum state.
+- `gamma::Float64`: The gamma parameter for the kernel, default is 1.0.
+
+# Returns
+- `Float64`: The computed kernel value.
+"""
 function projected_quantum_kernel(state1::ArrayReg, state2::ArrayReg; gamma=1.::Float64) # S110 in huang2021power
     n = nactive(state1)
     pauli_basis = [X, Y, Z]
@@ -70,6 +112,19 @@ function projected_quantum_kernel(state1::ArrayReg, state2::ArrayReg; gamma=1.::
     return exp(-gamma*summ)
 end
 
+"""
+    swap_test(state1::ArrayReg, state2::ArrayReg; nshots=1000::Int) -> Float64
+
+Performs a SWAP test between two quantum states.
+
+# Arguments
+- `state1::ArrayReg`: The first quantum state.
+- `state2::ArrayReg`: The second quantum state.
+- `nshots::Int`: The number of shots for the measurement, default is 1000.
+
+# Returns
+- `Float64`: The result of the SWAP test.
+"""
 function swap_test(state1::ArrayReg, state2::ArrayReg; nshots=1000::Int)
     n = nactive(state1)
     circ = circ_swap_test(n)
@@ -81,6 +136,19 @@ function swap_test(state1::ArrayReg, state2::ArrayReg; nshots=1000::Int)
     return res
 end
 
+"""
+    destructive_swap_test(state1::ArrayReg, state2::ArrayReg; nshots=1000::Int) -> Float64
+
+Performs a destructive SWAP test between two quantum states.
+
+# Arguments
+- `state1::ArrayReg`: The first quantum state.
+- `state2::ArrayReg`: The second quantum state.
+- `nshots::Int`: The number of shots for the measurement, default is 1000.
+
+# Returns
+- `Float64`: The result of the destructive SWAP test.
+"""
 function destructive_swap_test(state1::ArrayReg, state2::ArrayReg; nshots=1000::Int)
     n = nactive(state1)
     circ = circ_destructive_swap_test(n)
@@ -99,6 +167,18 @@ function destructive_swap_test(state1::ArrayReg, state2::ArrayReg; nshots=1000::
     return res
 end
 
+"""
+    entanglement_difference(state1::ArrayReg, state2::ArrayReg) -> Float64
+
+Computes the difference in entanglement between two quantum states.
+
+# Arguments
+- `state1::ArrayReg`: The first quantum state.
+- `state2::ArrayReg`: The second quantum state.
+
+# Returns
+- `Float64`: The computed entanglement difference.
+"""
 function entanglement_difference(state1::ArrayReg, state2::ArrayReg)
     n = nactive(state1)
     entropy1 = 0

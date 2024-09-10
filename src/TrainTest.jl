@@ -1,8 +1,22 @@
-# Exports
 export test_model,
        train_test_model
        
-function test_model(data::AbstractData, model::Union{AbstractModel, NTuple{2, AbstractModel}}, cost::AbstractCost; lambda=1.::Float64, regularization=:nothing::Symbol)
+"""
+    test_model(data::AbstractData, model::Union{AbstractModel, NTuple{2, AbstractModel}}, cost::AbstractCost; lambda=1.0::Float64, regularization=:nothing::Symbol) -> Tuple{Vector{Float64}, Float64, Vector{Int}}
+
+Tests a quantum model on a given dataset.
+
+# Arguments
+- `data::AbstractData`: The dataset containing quantum states and corresponding labels.
+- `model::Union{AbstractModel, NTuple{2, AbstractModel}}`: The quantum model or tuple of models.
+- `cost::AbstractCost`: The cost function.
+- `lambda::Float64`: The regularization parameter, default is 1.0.
+- `regularization::Symbol`: The type of regularization (`:l1` or `:l2`), default is `:nothing`.
+
+# Returns
+- `Tuple{Vector{Float64}, Float64, Vector{Int}}`: A tuple containing the model predictions, success rate, and indices of successful predictions.
+"""
+function test_model(data::AbstractData, model::Union{AbstractModel, NTuple{2, AbstractModel}}, cost::AbstractCost; lambda=1.0::Float64, regularization=:nothing::Symbol)
     model_preds = zeros(Float64, length(data.states))
     model_labels = zeros(Float64, length(data.states))
     suc_inds = Vector{Int}()
@@ -16,6 +30,33 @@ function test_model(data::AbstractData, model::Union{AbstractModel, NTuple{2, Ab
     return model_preds, suc_rate, suc_inds
 end
 
+"""
+    train_test_model(data1::AbstractData,
+                     data2::AbstractData,
+                     model::AbstractModel,
+                     cost::AbstractCost,
+                     iters::Int,
+                     optim::AbstractRule;
+                     lambda=0.2::Float64,
+                     regularization=:nothing::Symbol,
+                     verbose=false::Bool) -> Tuple{AbstractVector{T} where T<:Real, Vector{Float64}, Vector{Float64}, Vector{Float64}, Vector{Float64}, Vector{Float64}}
+
+Trains and tests a quantum model on given datasets.
+
+# Arguments
+- `data1::AbstractData`: The training dataset.
+- `data2::AbstractData`: The testing dataset.
+- `model::AbstractModel`: The quantum model.
+- `cost::AbstractCost`: The cost function.
+- `iters::Int`: The number of training iterations.
+- `optim::AbstractRule`: The optimization rule.
+- `lambda::Float64`: The regularization parameter, default is 0.2.
+- `regularization::Symbol`: The type of regularization (`:l1` or `:l2`), default is `:nothing`.
+- `verbose::Bool`: Whether to print progress information, default is false.
+
+# Returns
+- `Tuple{AbstractVector{T} where T<:Real, Vector{Float64}, Vector{Float64}, Vector{Float64}, Vector{Float64}, Vector{Float64}}`: A tuple containing the model parameters, loss track, training accuracy track, testing accuracy track, training predictions, and testing predictions.
+"""
 function train_test_model(data1::AbstractData,
                           data2::AbstractData,
                           model::AbstractModel,
@@ -56,6 +97,33 @@ function train_test_model(data1::AbstractData,
     return model.params, loss_track, tr_track, te_track, tr_preds, te_preds
 end
 
+"""
+    train_test_model(data1::AbstractData,
+                     data2::AbstractData,
+                     models::NTuple{2, AbstractModel},
+                     cost::AbstractCost,
+                     iters::Int,
+                     optim::AbstractRule;
+                     lambda=0.2::Float64,
+                     regularization=:nothing::Symbol,
+                     verbose=false::Bool) -> Tuple{AbstractVector{T} where T<:Real, AbstractVector{T} where T<:Real, Vector{Float64}, Vector{Float64}, Vector{Float64}, Vector{Float64}, Vector{Float64}}
+
+Trains and tests a tuple of quantum models on given datasets.
+
+# Arguments
+- `data1::AbstractData`: The training dataset.
+- `data2::AbstractData`: The testing dataset.
+- `models::NTuple{2, AbstractModel}`: The tuple of quantum models.
+- `cost::AbstractCost`: The cost function.
+- `iters::Int`: The number of training iterations.
+- `optim::AbstractRule`: The optimization rule.
+- `lambda::Float64`: The regularization parameter, default is 0.2.
+- `regularization::Symbol`: The type of regularization (`:l1` or `:l2`), default is `:nothing`.
+- `verbose::Bool`: Whether to print progress information, default is false.
+
+# Returns
+- `Tuple{AbstractVector{T} where T<:Real, AbstractVector{T} where T<:Real, Vector{Float64}, Vector{Float64}, Vector{Float64}, Vector{Float64}, Vector{Float64}}`: A tuple containing the parameters of the first model, the parameters of the second model, loss track, training accuracy track, testing accuracy track, training predictions, and testing predictions.
+"""
 function train_test_model(data1::AbstractData,
                           data2::AbstractData,
                           models::NTuple{2, AbstractModel},

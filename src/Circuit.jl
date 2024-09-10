@@ -1,4 +1,3 @@
-# Exports
 export circ_gate_single,
        circ_gate_n,
        circ_gate_sum,
@@ -37,57 +36,449 @@ export circ_gate_single,
        circ_obs_times_swap,
        circ_LCU
 
+"""
+    circ_gate_single(n::Int, i::Int, gate::ConstantGate) -> Chain
+
+Creates a quantum circuit with a single gate applied to the `i`-th qubit.
+
+# Arguments
+- `n::Int`: The total number of qubits.
+- `i::Int`: The index of the qubit to which the gate is applied.
+- `gate::ConstantGate`: The gate to be applied.
+
+# Returns
+- `Chain`: The resulting quantum circuit.
+"""
 circ_gate_single(n::Int, i::Int, gate::ConstantGate) = chain(n, put(i=>gate))
+
+"""
+    circ_gate_n(n::Int, gate::ConstantGate) -> Chain
+
+Creates a quantum circuit with the same gate applied to all qubits.
+
+# Arguments
+- `n::Int`: The total number of qubits.
+- `gate::ConstantGate`: The gate to be applied.
+
+# Returns
+- `Chain`: The resulting quantum circuit.
+"""
 circ_gate_n(n::Int, gate::ConstantGate) = chain(n, put(i=>gate) for i=1:n)
+
+"""
+    circ_gate_sum(n::Int, gate::ConstantGate) -> Chain
+
+Creates a quantum circuit with the sum of the same gate applied to all qubits.
+
+# Arguments
+- `n::Int`: The total number of qubits.
+- `gate::ConstantGate`: The gate to be applied.
+
+# Returns
+- `Chain`: The resulting quantum circuit.
+"""
 circ_gate_sum(n::Int, gate::ConstantGate) = sum(chain(n, put(i=>gate) for i=1:n))
+
+"""
+    circ_gate_where(n::Int, gate::ConstantGate, ones_where::Vector{Int}) -> Chain
+
+Creates a quantum circuit with the gate applied to specific qubits.
+
+# Arguments
+- `n::Int`: The total number of qubits.
+- `gate::ConstantGate`: The gate to be applied.
+- `ones_where::Vector{Int}`: The indices of the qubits to which the gate is applied.
+
+# Returns
+- `Chain`: The resulting quantum circuit.
+"""
 circ_gate_where(n::Int, gate::ConstantGate, ones_where::Vector{Int}) = chain(n, put(i=>gate) for i in ones_where)
 
+"""
+    circ_block_single(n::Int, i::Int, block::ChainBlock{2}) -> Chain
+
+Creates a quantum circuit with a single block applied to the `i`-th qubit.
+
+# Arguments
+- `n::Int`: The total number of qubits.
+- `i::Int`: The index of the qubit to which the block is applied.
+- `block::ChainBlock{2}`: The block to be applied.
+
+# Returns
+- `Chain`: The resulting quantum circuit.
+"""
 circ_block_single(n::Int, i::Int, block::ChainBlock{2}) = chain(n, put(i=>block))
+
+"""
+    circ_block_n(n::Int, block::ChainBlock{2}) -> Chain
+
+Creates a quantum circuit with the same block applied to all qubits.
+
+# Arguments
+- `n::Int`: The total number of qubits.
+- `block::ChainBlock{2}`: The block to be applied.
+
+# Returns
+- `Chain`: The resulting quantum circuit.
+"""
 circ_block_n(n::Int, block::ChainBlock{2}) = chain(n, put(i=>block) for i=1:n)
+
+"""
+    circ_block_sum(n::Int, block::ChainBlock{2}) -> Chain
+
+Creates a quantum circuit with the sum of the same block applied to all qubits.
+
+# Arguments
+- `n::Int`: The total number of qubits.
+- `block::ChainBlock{2}`: The block to be applied.
+
+# Returns
+- `Chain`: The resulting quantum circuit.
+"""
 circ_block_sum(n::Int, block::ChainBlock{2}) = sum(chain(n, put(i=>block) for i=1:n))
+
+"""
+    circ_block_where(n::Int, block::ChainBlock{2}, ones_where::Vector{Int}) -> Chain
+
+Creates a quantum circuit with the block applied to specific qubits.
+
+# Arguments
+- `n::Int`: The total number of qubits.
+- `block::ChainBlock{2}`: The block to be applied.
+- `ones_where::Vector{Int}`: The indices of the qubits to which the block is applied.
+
+# Returns
+- `Chain`: The resulting quantum circuit.
+"""
 circ_block_where(n::Int, block::ChainBlock{2}, ones_where::Vector{Int}) = chain(n, put(i=>block) for i in ones_where)
 
+"""
+    circ_X(n::Int, i::Int) -> Chain
+
+Creates a quantum circuit with an X gate applied to the `i`-th qubit.
+
+# Arguments
+- `n::Int`: The total number of qubits.
+- `i::Int`: The index of the qubit to which the X gate is applied.
+
+# Returns
+- `Chain`: The resulting quantum circuit.
+"""
 circ_X(n::Int, i::Int) = circ_gate_single(n, i, X)
+
+"""
+    circ_X(n::Int) -> Chain
+
+Creates a quantum circuit with an X gate applied to the first qubit.
+
+# Arguments
+- `n::Int`: The total number of qubits.
+
+# Returns
+- `Chain`: The resulting quantum circuit.
+"""
 circ_X(n::Int) = circ_gate_single(n, 1, X)
+
+"""
+    circ_X_where(n::Int, ones_where::Vector{Int}) -> Chain
+
+Creates a quantum circuit with X gates applied to specific qubits.
+
+# Arguments
+- `n::Int`: The total number of qubits.
+- `ones_where::Vector{Int}`: The indices of the qubits to which the X gates are applied.
+
+# Returns
+- `Chain`: The resulting quantum circuit.
+"""
 circ_X_where(n::Int, ones_where::Vector{Int}) = circ_gate_where(n, X, ones_where)
 
+"""
+    circ_Y(n::Int, i::Int) -> Chain
+
+Creates a quantum circuit with a Y gate applied to the `i`-th qubit.
+
+# Arguments
+- `n::Int`: The total number of qubits.
+- `i::Int`: The index of the qubit to which the Y gate is applied.
+
+# Returns
+- `Chain`: The resulting quantum circuit.
+"""
 circ_Y(n::Int, i::Int) = circ_gate_single(n, i, Y)
+
+"""
+    circ_Y(n::Int) -> Chain
+
+Creates a quantum circuit with a Y gate applied to the first qubit.
+
+# Arguments
+- `n::Int`: The total number of qubits.
+
+# Returns
+- `Chain`: The resulting quantum circuit.
+"""
 circ_Y(n::Int) = circ_gate_single(n, 1, Y)
+
+"""
+    circ_Y_where(n::Int, ones_where::Vector{Int}) -> Chain
+
+Creates a quantum circuit with Y gates applied to specific qubits.
+
+# Arguments
+- `n::Int`: The total number of qubits.
+- `ones_where::Vector{Int}`: The indices of the qubits to which the Y gates are applied.
+
+# Returns
+- `Chain`: The resulting quantum circuit.
+"""
 circ_Y_where(n::Int, ones_where::Vector{Int}) = circ_gate_where(n, Y, ones_where)
 
+"""
+    circ_Z(n::Int, i::Int) -> Chain
+
+Creates a quantum circuit with a Z gate applied to the `i`-th qubit.
+
+# Arguments
+- `n::Int`: The total number of qubits.
+- `i::Int`: The index of the qubit to which the Z gate is applied.
+
+# Returns
+- `Chain`: The resulting quantum circuit.
+"""
 circ_Z(n::Int, i::Int) = circ_gate_single(n, i, Z)
+
+"""
+    circ_Z(n::Int) -> Chain
+
+Creates a quantum circuit with a Z gate applied to the first qubit.
+
+# Arguments
+- `n::Int`: The total number of qubits.
+
+# Returns
+- `Chain`: The resulting quantum circuit.
+"""
 circ_Z(n::Int) = circ_gate_single(n, 1, Z)
+
+"""
+    circ_Z_where(n::Int, ones_where::Vector{Int}) -> Chain
+
+Creates a quantum circuit with Z gates applied to specific qubits.
+
+# Arguments
+- `n::Int`: The total number of qubits.
+- `ones_where::Vector{Int}`: The indices of the qubits to which the Z gates are applied.
+
+# Returns
+- `Chain`: The resulting quantum circuit.
+"""
 circ_Z_where(n::Int, ones_where::Vector{Int}) = circ_gate_where(n, Z, ones_where)
 
+"""
+    circ_Xn(n::Int) -> Chain
+
+Creates a quantum circuit with X gates applied to all qubits.
+
+# Arguments
+- `n::Int`: The total number of qubits.
+
+# Returns
+- `Chain`: The resulting quantum circuit.
+"""
 circ_Xn(n::Int) = chain(n, put(i=>X) for i=1:n)
+
+"""
+    circ_Yn(n::Int) -> Chain
+
+Creates a quantum circuit with Y gates applied to all qubits.
+
+# Arguments
+- `n::Int`: The total number of qubits.
+
+# Returns
+- `Chain`: The resulting quantum circuit.
+"""
 circ_Yn(n::Int) = chain(n, put(i=>Y) for i=1:n)
+
+"""
+    circ_Zn(n::Int) -> Chain
+
+Creates a quantum circuit with Z gates applied to all qubits.
+
+# Arguments
+- `n::Int`: The total number of qubits.
+
+# Returns
+- `Chain`: The resulting quantum circuit.
+"""
 circ_Zn(n::Int) = chain(n, put(i=>Z) for i=1:n)
 
+"""
+    circ_Xsum(n::Int) -> Chain
+
+Creates a quantum circuit with the sum of X gates applied to all qubits.
+
+# Arguments
+- `n::Int`: The total number of qubits.
+
+# Returns
+- `Chain`: The resulting quantum circuit.
+"""
 circ_Xsum(n::Int) = sum(chain(n, put(i=>X) for i=1:n))
+
+"""
+    circ_Ysum(n::Int) -> Chain
+
+Creates a quantum circuit with the sum of Y gates applied to all qubits.
+
+# Arguments
+- `n::Int`: The total number of qubits.
+
+# Returns
+- `Chain`: The resulting quantum circuit.
+"""
 circ_Ysum(n::Int) = sum(chain(n, put(i=>Y) for i=1:n))
+
+"""
+    circ_Zsum(n::Int) -> Chain
+
+Creates a quantum circuit with the sum of Z gates applied to all qubits.
+
+# Arguments
+- `n::Int`: The total number of qubits.
+
+# Returns
+- `Chain`: The resulting quantum circuit.
+"""
 circ_Zsum(n::Int) = sum(chain(n, put(i=>Z) for i=1:n))
 
+"""
+    circ_Ry_simple_conv(n::Int, i::Int, j::Int) -> Chain
+
+Creates a simple quantum circuit with Ry gates and a controlled-X gate.
+
+# Arguments
+- `n::Int`: The total number of qubits.
+- `i::Int`: The index of the first qubit.
+- `j::Int`: The index of the second qubit.
+
+# Returns
+- `Chain`: The resulting quantum circuit.
+"""
 circ_Ry_simple_conv(n::Int, i::Int, j::Int) = chain(n, put(i=>Ry(0)), put(j=>Ry(0)), control(i,j=>X))
 
+"""
+    circ_Ry_conv(n::Int, i::Int, j::Int) -> Chain
+
+Creates a quantum circuit with multiple Ry gates and controlled-X gates.
+
+# Arguments
+- `n::Int`: The total number of qubits.
+- `i::Int`: The index of the first qubit.
+- `j::Int`: The index of the second qubit.
+
+# Returns
+- `Chain`: The resulting quantum circuit.
+"""
 circ_Ry_conv(n::Int, i::Int, j::Int) = chain(n, put(i=>Ry(0)), put(j=>Ry(0)), control(i,j=>X), put(i=>Ry(0)),
                             put(j=>Ry(0)), control(i,j=>X), put(i=>Ry(0)), put(j=>Ry(0)))
 
+"""
+    circ_SU4_conv(n::Int, i::Int, j::Int) -> Chain
+
+Creates a quantum circuit with SU(4) gates and controlled-X gates.
+
+# Arguments
+- `n::Int`: The total number of qubits.
+- `i::Int`: The index of the first qubit.
+- `j::Int`: The index of the second qubit.
+
+# Returns
+- `Chain`: The resulting quantum circuit.
+"""
 function circ_SU4_conv(n::Int, i::Int, j::Int)
     squ() = chain(Rz(0), Ry(0), Rz(0))
     chain(n, put(i=>squ()), put(j=>squ()), control(i,j=>X), put(i=>Ry(0)), put(j=>Rz(0)),
             control(j,i=>X), put(i=>Ry(0)), control(i,j=>X), put(i=>squ()), put(j=>squ()))
 end
 
+"""
+    circ_Rx_layer(n::Int) -> Chain
+
+Creates a quantum circuit layer with Rx gates applied to all qubits.
+
+# Arguments
+- `n::Int`: The total number of qubits.
+
+# Returns
+- `Chain`: The resulting quantum circuit layer.
+"""
 circ_Rx_layer(n::Int) = chain(n, put(i=>Rx(0)) for i=1:n)
 
+"""
+    circ_Ry_layer(n::Int) -> Chain
+
+Creates a quantum circuit layer with Ry gates applied to all qubits.
+
+# Arguments
+- `n::Int`: The total number of qubits.
+
+# Returns
+- `Chain`: The resulting quantum circuit layer.
+"""
 circ_Ry_layer(n::Int) = chain(n, put(i=>Ry(0)) for i=1:n)
 
+"""
+    circ_Rz_layer(n::Int) -> Chain
+
+Creates a quantum circuit layer with Rz gates applied to all qubits.
+
+# Arguments
+- `n::Int`: The total number of qubits.
+
+# Returns
+- `Chain`: The resulting quantum circuit layer.
+"""
 circ_Rz_layer(n::Int) = chain(n, put(i=>Rz(0)) for i=1:n)
 
+"""
+    circ_CNOT_layer(n::Int) -> Chain
+
+Creates a quantum circuit layer with CNOT gates applied between adjacent qubits.
+
+# Arguments
+- `n::Int`: The total number of qubits.
+
+# Returns
+- `Chain`: The resulting quantum circuit layer.
+"""
 circ_CNOT_layer(n::Int) = chain(n, control(i, mod(i, n) + 1 => X) for i=1:n)
 
+"""
+    circ_CZ_layer(n::Int) -> Chain
+
+Creates a quantum circuit layer with CZ gates applied between adjacent qubits.
+
+# Arguments
+- `n::Int`: The total number of qubits.
+
+# Returns
+- `Chain`: The resulting quantum circuit layer.
+"""
 circ_CZ_layer(n::Int) = chain(n, control(i, mod(i, n) + 1 => Z) for i=1:n)
 
+"""
+    circ_HEA(n::Int) -> Chain
+
+Creates a Hardware Efficient Ansatz (HEA) quantum circuit.
+
+# Arguments
+- `n::Int`: The total number of qubits.
+
+# Returns
+- `Chain`: The resulting quantum circuit.
+"""
 function circ_HEA(n::Int)
     circ = chain(n)
     push!(circ, circ_Rx_layer(n))
@@ -96,6 +487,18 @@ function circ_HEA(n::Int)
     return circ
 end
 
+"""
+    circ_phase_flip(n::Int, x::Int) -> Chain
+
+Creates a quantum circuit that performs a phase flip on the state `x`.
+
+# Arguments
+- `n::Int`: The total number of qubits.
+- `x::Int`: The state to be phase-flipped.
+
+# Returns
+- `Chain`: The resulting quantum circuit.
+"""
 function circ_phase_flip(n::Int, x::Int)
     circ = chain(n)
     x2 = digits(2^n - 1 - x, base=2, pad=n)
@@ -105,6 +508,17 @@ function circ_phase_flip(n::Int, x::Int)
     return circ
 end
 
+"""
+    circ_hypergraph_state(vec::Vector{Int}) -> Chain
+
+Creates a quantum circuit that prepares a hypergraph state.
+
+# Arguments
+- `vec::Vector{Int}`: The vector representing the hypergraph state.
+
+# Returns
+- `Chain`: The resulting quantum circuit.
+"""
 function circ_hypergraph_state(vec::Vector{Int})
     n = trunc(Int, log2(length(vec)))
     circ = chain(n)
@@ -113,10 +527,35 @@ function circ_hypergraph_state(vec::Vector{Int})
     return circ
 end
 
+"""
+    circ_swap_decomposed(n::Int, i::Int, j::Int) -> Chain
+
+Creates a quantum circuit that performs a decomposed SWAP operation between qubits `i` and `j`.
+
+# Arguments
+- `n::Int`: The total number of qubits.
+- `i::Int`: The index of the first qubit.
+- `j::Int`: The index of the second qubit.
+
+# Returns
+- `Chain`: The resulting quantum circuit.
+"""
 function circ_swap_decomposed(n::Int, i::Int, j::Int)
     return sum(chain(n, put(i=>ele/sqrt(2)), put(j=>ele/sqrt(2))) for ele in [I2, X, Y, Z])
 end
- 
+
+"""
+    circ_swap_all(n::Int; decompose::Bool=false) -> Chain
+
+Creates a quantum circuit that performs SWAP operations between pairs of qubits.
+
+# Arguments
+- `n::Int`: The total number of qubits.
+- `decompose::Bool`: Whether to use the decomposed SWAP operation.
+
+# Returns
+- `Chain`: The resulting quantum circuit.
+"""
 function circ_swap_all(n::Int; decompose::Bool=false)
     isodd(n) ? error("n must be even") : nothing
     if decompose
@@ -126,6 +565,17 @@ function circ_swap_all(n::Int; decompose::Bool=false)
     end
 end
 
+"""
+    circ_swap_test(n::Int) -> Chain
+
+Creates a quantum circuit that performs a SWAP test.
+
+# Arguments
+- `n::Int`: The total number of qubits.
+
+# Returns
+- `Chain`: The resulting quantum circuit.
+"""
 function circ_swap_test(n::Int)
     circ = chain(1+2n)
     push!(circ, put(1=>H))
@@ -136,6 +586,17 @@ function circ_swap_test(n::Int)
     return circ
 end
 
+"""
+    circ_destructive_swap_test(n::Int) -> Chain
+
+Creates a quantum circuit that performs a destructive SWAP test.
+
+# Arguments
+- `n::Int`: The total number of qubits.
+
+# Returns
+- `Chain`: The resulting quantum circuit.
+"""
 function circ_destructive_swap_test(n::Int)
     circ = chain(2n)
     for i in 1:n
@@ -145,6 +606,18 @@ function circ_destructive_swap_test(n::Int)
     return circ
 end
 
+"""
+    circ_obs_times_swap(n::Int, obs::Union{ChainBlock, Add}) -> Chain
+
+Creates a quantum circuit that performs an observable times SWAP operation.
+
+# Arguments
+- `n::Int`: The total number of qubits.
+- `obs::Union{ChainBlock, Add}`: The observable to be applied.
+
+# Returns
+- `Chain`: The resulting quantum circuit.
+"""
 function circ_obs_times_swap(n::Int, obs::Union{ChainBlock, Add})
     paulis = [I2, X, Y, Z]
     n_paulis = length(paulis)
@@ -153,6 +626,20 @@ function circ_obs_times_swap(n::Int, obs::Union{ChainBlock, Add})
     return circ
 end
 
+"""
+    circ_LCU(n::Int, U_vec::Vector{ChainBlock}; initial_layer::Bool=true, final_layer::Bool=true) -> Chain
+
+Creates a quantum circuit that performs a Linear Combination of Unitaries (LCU) operation.
+
+# Arguments
+- `n::Int`: The total number of qubits.
+- `U_vec::Vector{ChainBlock}`: The vector of unitary operations.
+- `initial_layer::Bool`: Whether to include the initial layer of Hadamard gates.
+- `final_layer::Bool`: Whether to include the final layer of Hadamard gates.
+
+# Returns
+- `Chain`: The resulting quantum circuit.
+"""
 function circ_LCU(n::Int, U_vec::Vector{ChainBlock}; initial_layer::Bool=true, final_layer::Bool=true)
     n_ancillas = Int(ceil(log(2, length(U_vec))))
     K = length(U_vec)

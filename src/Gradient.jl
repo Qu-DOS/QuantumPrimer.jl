@@ -4,6 +4,20 @@ export parameter_shift_rule,
        eval_grad,
        eval_full_grad
 
+"""
+    parameter_shift_rule(obs::Union{ChainBlock, Add}, state::ArrayReg, model::AbstractModel; epsilon=(π/2)::Float64) -> Vector{ComplexF64}
+
+Computes the gradient of the expectation value of an observable using the parameter shift rule.
+
+# Arguments
+- `obs::Union{ChainBlock, Add}`: The observable.
+- `state::ArrayReg`: The quantum state.
+- `model::AbstractModel`: The quantum model.
+- `epsilon::Float64`: The shift parameter, default is `π/2`.
+
+# Returns
+- `Vector{ComplexF64}`: The computed gradients.
+"""
 function parameter_shift_rule(obs::Union{ChainBlock, Add}, state::ArrayReg, model::AbstractModel; epsilon=(π/2)::Float64)
     circ = model.circ
     p_expanded = expand_params(model)
@@ -24,6 +38,20 @@ function parameter_shift_rule(obs::Union{ChainBlock, Add}, state::ArrayReg, mode
     return grads
 end
 
+"""
+    parameter_shift_rule(obs::Union{ChainBlock, Add}, state::ArrayReg, model::AbstractModel; epsilon=(π/2)::Float64) -> Vector{ComplexF64}
+
+Computes the gradient of the expectation value of an observable using the parameter shift rule.
+
+# Arguments
+- `obs::Union{ChainBlock, Add}`: The observable.
+- `state::ArrayReg`: The quantum state.
+- `model::AbstractModel`: The quantum model.
+- `epsilon::Float64`: The shift parameter, default is `π/2`.
+
+# Returns
+- `Vector{ComplexF64}`: The computed gradients.
+"""
 function parameter_shift_rule(obs::Union{ChainBlock, Add}, state1::ArrayReg, state2::ArrayReg, model::AbstractModel; epsilon=(π/2)::Float64)
     circ = model.circ
     p_expanded = expand_params(model)
@@ -44,6 +72,20 @@ function parameter_shift_rule(obs::Union{ChainBlock, Add}, state1::ArrayReg, sta
     return grads
 end
 
+"""
+    regularize_grads(grads::Vector{Float64}, model::AbstractModel; lambda=1.0::Float64, regularization=:nothing::Symbol) -> Vector{Float64}
+
+Regularizes the gradients using L1 or L2 regularization.
+
+# Arguments
+- `grads::Vector{Float64}`: The gradients to be regularized.
+- `model::AbstractModel`: The quantum model.
+- `lambda::Float64`: The regularization parameter, default is 1.0.
+- `regularization::Symbol`: The type of regularization (`:l1` or `:l2`), default is `:nothing`.
+
+# Returns
+- `Vector{Float64}`: The regularized gradients.
+"""
 function regularize_grads(grads::Vector{Float64}, model::AbstractModel; lambda=1.::Float64, regularization=:nothing::Symbol)
     if regularization == :l1
         l1 = sign.(expand_params(model))
@@ -55,6 +97,20 @@ function regularize_grads(grads::Vector{Float64}, model::AbstractModel; lambda=1
     return grads
 end
 
+"""
+    regularize_grads(grads::Vector{Float64}, models::NTuple{2, AbstractModel}; lambda=1.0::Float64, regularization=:nothing::Symbol) -> Vector{Float64}
+
+Regularizes the gradients for a tuple of models using L1 or L2 regularization.
+
+# Arguments
+- `grads::Vector{Float64}`: The gradients to be regularized.
+- `models::NTuple{2, AbstractModel}`: The tuple of quantum models.
+- `lambda::Float64`: The regularization parameter, default is 1.0.
+- `regularization::Symbol`: The type of regularization (`:l1` or `:l2`), default is `:nothing`.
+
+# Returns
+- `Vector{Float64}`: The regularized gradients.
+"""
 function regularize_grads(grads::Vector{Float64}, models::NTuple{2, AbstractModel}; lambda=1.::Float64, regularization=:nothing::Symbol)
     model1, model2 = models
     p_expanded1 = expand_params(model1)
@@ -70,6 +126,21 @@ function regularize_grads(grads::Vector{Float64}, models::NTuple{2, AbstractMode
     return grads
 end
 
+"""
+    eval_grad(state::ArrayReg, model::AbstractModel, cost::CircuitCost; lambda=1.0::Float64, regularization=:nothing::Symbol) -> Vector{Float64}
+
+Evaluates the gradient of the cost function for a given quantum state and model.
+
+# Arguments
+- `state::ArrayReg`: The quantum state.
+- `model::AbstractModel`: The quantum model.
+- `cost::CircuitCost`: The cost function.
+- `lambda::Float64`: The regularization parameter, default is 1.0.
+- `regularization::Symbol`: The type of regularization (`:l1` or `:l2`), default is `:nothing`.
+
+# Returns
+- `Vector{Float64}`: The evaluated gradients.
+"""
 function eval_grad(state::ArrayReg, model::AbstractModel, cost::CircuitCost; lambda=1.::Float64, regularization=:nothing::Symbol)
     circ = model.circ
     dispatch!(circ, expand_params(model))
@@ -79,6 +150,21 @@ function eval_grad(state::ArrayReg, model::AbstractModel, cost::CircuitCost; lam
     return grads
 end
 
+"""
+    eval_grad(states::NTuple{2, ArrayReg}, models::NTuple{2, AbstractModel}, cost::CircuitCost; lambda=1.0::Float64, regularization=:nothing::Symbol) -> Vector{Float64}
+
+Evaluates the gradient of the cost function for a pair of quantum states and models.
+
+# Arguments
+- `states::NTuple{2, ArrayReg}`: The tuple of quantum states.
+- `models::NTuple{2, AbstractModel}`: The tuple of quantum models.
+- `cost::CircuitCost`: The cost function.
+- `lambda::Float64`: The regularization parameter, default is 1.0.
+- `regularization::Symbol`: The type of regularization (`:l1` or `:l2`), default is `:nothing`.
+
+# Returns
+- `Vector{Float64}`: The evaluated gradients.
+"""
 function eval_grad(states::NTuple{2, ArrayReg}, models::NTuple{2, AbstractModel}, cost::CircuitCost; lambda=1.::Float64, regularization=:nothing::Symbol)
     state1, state2 = states
     model1, model2 = models
@@ -98,6 +184,22 @@ function eval_grad(states::NTuple{2, ArrayReg}, models::NTuple{2, AbstractModel}
     return avg_grads
 end
 
+"""
+    eval_grad(states::NTuple{2, ArrayReg}, model::AbstractModel, cost::GeneralCost; epsilon=(π/2)::Float64, lambda=1.0::Float64, regularization=:nothing::Symbol) -> Vector{Float64}
+
+Evaluates the gradient of the general cost function for a pair of quantum states and a model.
+
+# Arguments
+- `states::NTuple{2, ArrayReg}`: The tuple of quantum states.
+- `model::AbstractModel`: The quantum model.
+- `cost::GeneralCost`: The general cost function.
+- `epsilon::Float64`: The shift parameter, default is `π/2`.
+- `lambda::Float64`: The regularization parameter, default is 1.0.
+- `regularization::Symbol`: The type of regularization (`:l1` or `:l2`), default is `:nothing`.
+
+# Returns
+- `Vector{Float64}`: The evaluated gradients.
+"""
 function eval_grad(states::NTuple{2, ArrayReg}, model::AbstractModel, cost::GeneralCost; epsilon=(π/2)::Float64, lambda=1.::Float64, regularization=:nothing::Symbol)
     state1, state2 = states
     circ = model.circ
@@ -110,6 +212,21 @@ function eval_grad(states::NTuple{2, ArrayReg}, model::AbstractModel, cost::Gene
     return grads
 end
 
+"""
+    eval_grad(state::ArrayReg, models::NTuple{2, AbstractModel}, cost::GeneralCost; lambda=1.0::Float64, regularization=:nothing::Symbol) -> Vector{Float64}
+
+Evaluates the gradient of the general cost function for a quantum state and a tuple of models.
+
+# Arguments
+- `state::ArrayReg`: The quantum state.
+- `models::NTuple{2, AbstractModel}`: The tuple of quantum models.
+- `cost::GeneralCost`: The general cost function.
+- `lambda::Float64`: The regularization parameter, default is 1.0.
+- `regularization::Symbol`: The type of regularization (`:l1` or `:l2`), default is `:nothing`.
+
+# Returns
+- `Vector{Float64}`: The evaluated gradients.
+"""
 function eval_grad(state::ArrayReg, models::NTuple{2, AbstractModel}, cost::GeneralCost; lambda=1.::Float64, regularization=:nothing::Symbol)
     model1, model2 = models
     n = model1.n
@@ -125,6 +242,21 @@ function eval_grad(state::ArrayReg, models::NTuple{2, AbstractModel}, cost::Gene
     return grads
 end
 
+"""
+    eval_full_grad(data::AbstractData, model::Union{AbstractModel, NTuple{2, AbstractModel}}, cost::AbstractCost; lambda=1.0::Float64, regularization=:nothing::Symbol) -> Vector{Float64}
+
+Evaluates the full gradient of the cost function over a dataset for a given model or tuple of models.
+
+# Arguments
+- `data::AbstractData`: The dataset containing quantum states and corresponding labels.
+- `model::Union{AbstractModel, NTuple{2, AbstractModel}}`: The quantum model or tuple of models.
+- `cost::AbstractCost`: The cost function.
+- `lambda::Float64`: The regularization parameter, default is 1.0.
+- `regularization::Symbol`: The type of regularization (`:l1` or `:l2`), default is `:nothing`.
+
+# Returns
+- `Vector{Float64}`: The evaluated full gradients.
+"""
 function eval_full_grad(data::AbstractData, model::Union{AbstractModel, NTuple{2, AbstractModel}}, cost::AbstractCost; lambda=1.::Float64, regularization=:nothing::Symbol)
     all_grads = Vector{Vector{Float64}}()
     for i in eachindex(data.states)
