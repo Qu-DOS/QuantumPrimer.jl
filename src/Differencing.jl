@@ -1,5 +1,4 @@
 export covariance,
-       covariance_siamese,
        covariance_siamese_commuting_obs,
        projected_quantum_kernel,
        swap_test,

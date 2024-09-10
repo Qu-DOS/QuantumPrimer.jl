@@ -16,7 +16,19 @@ makedocs(;
     pages=[
         "Home" => "index.md",
         "QNN" => "qnn.md",
+        "QCNN" => "qcnn.md",
+        "Data" => "data.md",
+        "Model" => "model.md",
+        "Loss" => "loss.md",
+        "Gradient" => "gradient.md",
+        "Cost" => "cost.md",
+        "Circuit" => "circuit.md",
+        "Differencing" => "differencing.md",
+        "Activation" => "activation.md",
+        "Train and Test" => "traintest.md",
         "QSP" => "qsp.md",
+        "Graph" => "graph.md",
+        "Utils" => "utils.md"
     ],
 )
 

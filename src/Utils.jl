@@ -1,5 +1,4 @@
 export haar_random_unitary,
-       circ_haar_random_unitary,
        wasserstein_distance,
        KL_divergence,
        skewness
@@ -20,24 +19,6 @@ function haar_random_unitary(n::Int)
     Z = qr(U)
     D = diagm(0 => diag(Z.R)./abs.(diag(Z.R)))
     return Z.Q * D
-end
-
-"""
-    circ_haar_random_unitary(n::Int) -> ChainBlock
-
-Generates a quantum circuit with a Haar-random unitary matrix of size `2^n x 2^n`.
-
-# Arguments
-- `n::Int`: The number of qubits.
-
-# Returns
-- `ChainBlock`: The quantum circuit with the Haar-random unitary matrix.
-"""
-function circ_haar_random_unitary(n::Int)
-    U = haar_random_unitary(2^n)
-    circ = chain(n)
-    push!(circ, matblock(U))
-    return circ
 end
 
 """
