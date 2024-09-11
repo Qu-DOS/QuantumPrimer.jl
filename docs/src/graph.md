@@ -11,7 +11,6 @@ sort_lexicographic
 ## Line graph
 ```@docs
 create_line_graph
-balance_signed_graph
 ```
 
 ## Mapping to Hamiltonian thermal state
@@ -32,7 +31,7 @@ classify_state_negative_spectrum
 classify_state_frustration_index
 ```
 
-## Frustration index DFS
+## Frustration index
 ```@docs
 find_cycles
 get_neighbors
@@ -40,6 +39,8 @@ dfs_find_cycles!
 evaluate_cycles_signs
 count_unbalanced_cycles
 find_frustration_index
+balance_signed_graph
+reduce_frustration_signed_graph
 ```
 
 ## Utility graph function
