@@ -21,7 +21,8 @@ export AbstractGraph,
        count_unbalanced_cycles,
        find_frustration_index,
        plot_signed_graph,
-       balance_signed_graph
+       balance_signed_graph,
+       reduce_frustration_signed_graph
 
 """
     AbstractGraph
@@ -679,5 +680,34 @@ Balances a signed graph by adjusting the signs of the edges to make the frustrat
 - `SignedGraph`: The balanced signed graph.
 """
 function balance_signed_graph(graph::SignedGraph)
-    return SignedGraph(graph.l, graph.s .* vcat([i for i=1:length(filter(x->length(x)==1, graph.l))], find_frustration_index(graph)[2]))
+    _, sign_changes = find_frustration_index(graph)
+    padding = [i for i=1:length(filter(x->length(x)==1, graph.l))]
+    return SignedGraph(graph.l, graph.s .* vcat(padding, sign_changes))
+end
+
+"""
+    reduce_frustration_signed_graph(graph::SignedGraph, target::Int) -> SignedGraph
+
+Reduce the frustration index of a signed graph by cycling through the .
+
+# Arguments
+- `graph::SignedGraph`: The input signed graph.
+- `target::Int`: The number of sign changes to reduce the frustration index.
+
+# Returns
+- `SignedGraph`: The signed graph with reduced frustration index.
+"""
+function reduce_frustration_signed_graph(graph::SignedGraph, target::Int)
+    frustration_index, sign_changes = find_frustration_index(graph)
+    change_idx = findall(x -> x == -1, sign_changes)
+    binary_vectors = [digits(i, base=2, pad=frustration_index).* 2 .- 1 for i in 0:(2^frustration_index - 1)]
+    filter!(x -> count(i -> i==-1, x) == target, binary_vectors)
+    if !isempty(binary_vectors)
+        rand_idx = rand(binary_vectors)
+        sign_changes[change_idx] = rand_idx
+        padding = [i for i=1:length(filter(x->length(x)==1, graph.l))]
+        return SignedGraph(graph.l, graph.s .* vcat(padding, sign_changes))
+    else
+        error("The number of sign changes requested is greater than the frustration index")
+    end
 end
