@@ -27,6 +27,7 @@ makedocs(;
         "Activation" => "activation.md",
         "Train and Test" => "traintest.md",
         "QSP" => "qsp.md",
+        "VQE" => "vqe.md",
         "Graph" => "graph.md",
         "Utils" => "utils.md"
     ],
