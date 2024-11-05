@@ -688,7 +688,7 @@ end
 """
     reduce_frustration_signed_graph(graph::SignedGraph, target::Int) -> SignedGraph
 
-Reduce the frustration index of a signed graph by cycling through the .
+Reduces the frustration index of a signed graph by "flipping" a target number of -1 in the `sign_changes` vector.
 
 # Arguments
 - `graph::SignedGraph`: The input signed graph.
