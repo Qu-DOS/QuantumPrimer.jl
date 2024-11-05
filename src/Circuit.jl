@@ -27,6 +27,7 @@ export circ_gate_single,
        circ_CNOT_layer,
        circ_CZ_layer,
        circ_HEA,
+       circ_HEA_real,
        circ_phase_flip,
        circ_hypergraph_state,
        circ_swap_decomposed,
@@ -483,6 +484,24 @@ Creates a Hardware Efficient Ansatz (HEA) quantum circuit.
 function circ_HEA(n::Int)
     circ = chain(n)
     push!(circ, circ_Rx_layer(n))
+    push!(circ, circ_Ry_layer(n))
+    push!(circ, circ_CNOT_layer(n))
+    return circ
+end
+
+"""
+    circ_HEA_real(n::Int) -> ChainBlock
+
+Creates a Hardware Efficient Ansatz (HEA) quantum circuit. This version is for real-valued ground states.
+
+# Arguments
+- `n::Int`: The total number of qubits.
+
+# Returns
+- `ChainBlock`: The resulting quantum circuit.
+"""
+function circ_HEA_real(n::Int)
+    circ = chain(n)
     push!(circ, circ_Ry_layer(n))
     push!(circ, circ_CNOT_layer(n))
     return circ

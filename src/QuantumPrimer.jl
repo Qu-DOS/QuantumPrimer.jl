@@ -9,6 +9,7 @@ using Combinatorics
 using ForwardDiff
 using Kronecker
 using Graphs
+using BitBasis
 
 include("Circuit.jl");
 include("Data.jl");
@@ -26,5 +27,7 @@ include("Graph.jl")
 include("Utils.jl");
 
 include("QSP.jl");
+
+include("VQE.jl");
 
 end
