@@ -43,6 +43,7 @@ circ_CZ_layer
 ## QNN circuits
 ```@docs
 circ_HEA
+circ_HEA_real
 ```
 
 ## Hypergraph states circuits
