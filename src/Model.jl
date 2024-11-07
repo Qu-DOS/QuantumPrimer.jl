@@ -71,7 +71,6 @@ Initializes the parameters of a `GeneralModel` instance.
 - An error if the number of qubits is not a power of 2.
 """
 function initialize_params(model::GeneralModel)
-    !ispow2(model.n) ? error("The register dimension has to be a power of 2") : nothing
     n_params = nparameters(model.circ)
     model.params = 2pi * rand(n_params)
 end
@@ -88,7 +87,6 @@ Initializes the parameters of an `InvariantModel` instance.
 - An error if the number of qubits is not a power of 2.
 """
 function initialize_params(model::InvariantModel)
-    !ispow2(model.n) ? error("The register dimension has to be a power of 2") : nothing
     n_params = trunc(Int, nparameters(model.ansatz(model.n, 1, 2)) * model.n_layers)
     model.params = 2pi * rand(n_params)
 end

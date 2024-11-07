@@ -127,6 +127,32 @@ function eval_loss(states::NTuple{2, ArrayReg}, model::AbstractModel, cost::Gene
 end
 
 """
+    eval_loss(states::NTuple{2, ArrayReg}, model::AbstractModel, cost::CircuitCost; lambda=1.0::Float64, regularization=:nothing::Symbol) -> Float64
+
+Evaluates the loss for a pair of quantum states and a model using a general cost function.
+
+# Arguments
+- `states::NTuple{2, ArrayReg}`: The tuple of quantum states.
+- `model::AbstractModel`: The quantum model.
+- `cost::CircuitCost`: The circuit cost function.
+- `lambda::Float64`: The regularization parameter, default is 1.0.
+- `regularization::Symbol`: The type of regularization (`:l1` or `:l2`), default is `:nothing`.
+
+# Returns
+- `Float64`: The evaluated loss.
+"""
+function eval_loss(states::NTuple{2, ArrayReg}, model::AbstractModel, cost::CircuitCost; lambda=1.0::Float64, regularization=:nothing::Symbol)
+    state1, state2 = states
+    circ = model.circ
+    n = model.n
+    dispatch!(circ, expand_params(model))
+    circ_full = chain(2n, put(1:n => circ), put(n+1:2n => circ))
+    loss = expect(cost.cost(2n)*circ_swap_all(2n), join(state2, state1) |> circ_full)
+    loss = regularize_loss(loss, model; lambda=lambda, regularization=regularization)
+    return loss
+end
+
+"""
     eval_loss(state::ArrayReg, models::NTuple{2, AbstractModel}, cost::GeneralCost; lambda=1.0::Float64, regularization=:nothing::Symbol) -> Float64
 
 Evaluates the loss for a quantum state and a tuple of models using a general cost function.
