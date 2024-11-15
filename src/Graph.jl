@@ -679,10 +679,16 @@ Balances a signed graph by adjusting the signs of the edges to make the frustrat
 # Returns
 - `SignedGraph`: The balanced signed graph.
 """
-function balance_signed_graph(graph::SignedGraph)
-    _, sign_changes = find_frustration_index(graph)
-    padding = [i for i=1:length(filter(x->length(x)==1, graph.l))]
-    return SignedGraph(graph.l, graph.s .* vcat(padding, sign_changes))
+function balance_signed_graph(graph::SignedGraph; all_plus::Bool=true)
+    n_vertices = length(filter(x->length(x)==1, graph.l))
+    n_edges = length(filter(x->length(x)==2, graph.l))
+    if all_plus
+        return SignedGraph(graph.l, vcat(zeros(Int, n_vertices), ones(Int, n_edges)))
+    else
+        _, sign_changes = find_frustration_index(graph)
+        padding = [i for i=1:length(filter(x->length(x)==1, graph.l))]
+        return SignedGraph(graph.l, graph.s .* vcat(padding, sign_changes))
+    end
 end
 
 """
