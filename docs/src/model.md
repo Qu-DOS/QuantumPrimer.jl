@@ -9,7 +9,7 @@ InvariantModel
 
 ## Parameter functions
 ```@docs
-initialize_params
+initialize_params!
 expand_params
 reduce_params
 ```

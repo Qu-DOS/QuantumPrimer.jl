@@ -16,7 +16,7 @@ Tests a quantum model on a given dataset.
 # Returns
 - `Tuple{Vector{Float64}, Float64, Vector{Int}}`: A tuple containing the model predictions, success rate, and indices of successful predictions.
 """
-function test_model(data::AbstractData, model::Union{AbstractModel, NTuple{2, AbstractModel}}, cost::AbstractCost; lambda=1.0::Float64, regularization=:nothing::Symbol)
+function test_model(data::AbstractData, model::Union{AbstractModel, NTuple{<:Any, AbstractModel}}, cost::AbstractCost; lambda=1.0::Float64, regularization=:nothing::Symbol)
     model_preds = zeros(Float64, length(data.states))
     model_labels = zeros(Float64, length(data.states))
     suc_inds = Vector{Int}()
@@ -100,20 +100,20 @@ end
 """
     train_test_model(data1::AbstractData,
                      data2::AbstractData,
-                     models::NTuple{2, AbstractModel},
+                     models::NTuple{<:Any, AbstractModel},
                      cost::AbstractCost,
                      iters::Int,
                      optim::AbstractRule;
                      lambda=0.2::Float64,
                      regularization=:nothing::Symbol,
-                     verbose=false::Bool) -> Tuple{AbstractVector{T} where T<:Real, AbstractVector{T} where T<:Real, Vector{Float64}, Vector{Float64}, Vector{Float64}, Vector{Float64}, Vector{Float64}}
+                     verbose=false::Bool) -> Tuple{NTuple{<:Any, AbstractModel}, Vector{Float64}, Vector{Float64}, Vector{Float64}, Vector{Float64}, Vector{Float64}}
 
 Trains and tests a tuple of quantum models on given datasets.
 
 # Arguments
 - `data1::AbstractData`: The training dataset.
 - `data2::AbstractData`: The testing dataset.
-- `models::NTuple{2, AbstractModel}`: The tuple of quantum models.
+- `models::NTuple{<:Any, AbstractModel}`: The tuple of quantum models.
 - `cost::AbstractCost`: The cost function.
 - `iters::Int`: The number of training iterations.
 - `optim::AbstractRule`: The optimization rule.
@@ -122,19 +122,19 @@ Trains and tests a tuple of quantum models on given datasets.
 - `verbose::Bool`: Whether to print progress information, default is false.
 
 # Returns
-- `Tuple{AbstractVector{T} where T<:Real, AbstractVector{T} where T<:Real, Vector{Float64}, Vector{Float64}, Vector{Float64}, Vector{Float64}, Vector{Float64}}`: A tuple containing the parameters of the first model, the parameters of the second model, loss track, training accuracy track, testing accuracy track, training predictions, and testing predictions.
+- `Tuple{NTuple{<:Any, AbstractModel}, Vector{Float64}, Vector{Float64}, Vector{Float64}, Vector{Float64}, Vector{Float64}}`: A tuple containing all models, loss track, training accuracy track, testing accuracy track, training predictions, and testing predictions.
 """
 function train_test_model(data1::AbstractData,
                           data2::AbstractData,
-                          models::NTuple{2, AbstractModel},
+                          models::NTuple{<:Any, AbstractModel},
                           cost::AbstractCost,
                           iters::Int,
                           optim::AbstractRule;
                           lambda=0.2::Float64,
                           regularization=:nothing::Symbol,
                           verbose=false::Bool)
-    model1, model2 = models
-    all_params = vcat(model1.params, model2.params)
+    all_params = vcat([model.params for model in models]...)
+    n_params = length(models[1].params)
     opt = Optimisers.setup(optim, all_params)
     loss_track = Float64[]
     tr_track = Float64[]
@@ -149,8 +149,9 @@ function train_test_model(data1::AbstractData,
     intervals = collect(0:iters÷8:iters)
     for i in 1:iters
         Optimisers.update!(opt, all_params, eval_full_grad(data1, models, cost; lambda=lambda, regularization=regularization))
-        model1.params = all_params[1:length(model1.params)]
-        model2.params = all_params[length(model1.params)+1:end]
+        for i in eachindex(models)
+            models[i].params = all_params[(i-1)*n_params+1:i*n_params]
+        end
         current_loss = eval_full_loss(data1, models, cost; lambda=lambda, regularization=regularization)
         tr_preds, tr_acc, _ = test_model(data1, models, cost; lambda=lambda, regularization=regularization)
         te_preds, te_acc, _ = test_model(data2, models, cost; lambda=lambda, regularization=regularization)
@@ -165,5 +166,5 @@ function train_test_model(data1::AbstractData,
         end
     end
     println("Final: loss = $(loss_track[end]), tr_acc = $(tr_track[end]), te_acc = $(te_track[end])")
-    return model1.params, model2.params, loss_track, tr_track, te_track, tr_preds, te_preds
+    return models, loss_track, tr_track, te_track, tr_preds, te_preds
 end

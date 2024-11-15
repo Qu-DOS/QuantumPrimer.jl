@@ -2,7 +2,7 @@
 export AbstractModel,
        GeneralModel,
        InvariantModel,
-       initialize_params,
+       initialize_params!,
        expand_params,
        reduce_params
 
@@ -60,7 +60,7 @@ Base.@kwdef mutable struct InvariantModel{NN<:Int, CC<:ChainBlock, AA<:Function,
 end
 
 """
-    initialize_params(model::GeneralModel)
+    initialize_params!(model::GeneralModel)
 
 Initializes the parameters of a `GeneralModel` instance.
 
@@ -70,14 +70,14 @@ Initializes the parameters of a `GeneralModel` instance.
 # Throws
 - An error if the number of qubits is not a power of 2.
 """
-function initialize_params(model::GeneralModel)
+function initialize_params!(model::GeneralModel)
     !ispow2(model.n) ? error("The register dimension has to be a power of 2") : nothing
     n_params = nparameters(model.circ)
     model.params = 2pi * rand(n_params)
 end
 
 """
-    initialize_params(model::InvariantModel)
+    initialize_params!(model::InvariantModel)
 
 Initializes the parameters of an `InvariantModel` instance.
 
@@ -87,7 +87,7 @@ Initializes the parameters of an `InvariantModel` instance.
 # Throws
 - An error if the number of qubits is not a power of 2.
 """
-function initialize_params(model::InvariantModel)
+function initialize_params!(model::InvariantModel)
     !ispow2(model.n) ? error("The register dimension has to be a power of 2") : nothing
     n_params = trunc(Int, nparameters(model.ansatz(model.n, 1, 2)) * model.n_layers)
     model.params = 2pi * rand(n_params)

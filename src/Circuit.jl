@@ -660,7 +660,7 @@ Creates a quantum circuit that performs a Linear Combination of Unitaries (LCU) 
 # Returns
 - `ChainBlock`: The resulting quantum circuit.
 """
-function circ_LCU(n::Int, U_vec::Vector{ChainBlock}; initial_layer::Bool=true, final_layer::Bool=true)
+function circ_LCU(n::Int, U_vec::Vector{ChainBlock{T}} where T <: Any; initial_layer::Bool=true, final_layer::Bool=true)
     n_ancillas = Int(ceil(log(2, length(U_vec))))
     K = length(U_vec)
     N = n + n_ancillas

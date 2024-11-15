@@ -98,24 +98,22 @@ function regularize_grads(grads::Vector{Float64}, model::AbstractModel; lambda=1
 end
 
 """
-    regularize_grads(grads::Vector{Float64}, models::NTuple{2, AbstractModel}; lambda=1.0::Float64, regularization=:nothing::Symbol) -> Vector{Float64}
+    regularize_grads(grads::Vector{Float64}, models::NTuple{<:Any, AbstractModel}; lambda=1.0::Float64, regularization=:nothing::Symbol) -> Vector{Float64}
 
 Regularizes the gradients for a tuple of models using L1 or L2 regularization.
 
 # Arguments
 - `grads::Vector{Float64}`: The gradients to be regularized.
-- `models::NTuple{2, AbstractModel}`: The tuple of quantum models.
+- `models::NTuple{<:Any, AbstractModel}`: The tuple of quantum models.
 - `lambda::Float64`: The regularization parameter, default is 1.0.
 - `regularization::Symbol`: The type of regularization (`:l1` or `:l2`), default is `:nothing`.
 
 # Returns
 - `Vector{Float64}`: The regularized gradients.
 """
-function regularize_grads(grads::Vector{Float64}, models::NTuple{2, AbstractModel}; lambda=1.::Float64, regularization=:nothing::Symbol)
-    model1, model2 = models
-    p_expanded1 = expand_params(model1)
-    p_expanded2 = expand_params(model2)
-    p_expanded_full = vcat(p_expanded1, p_expanded2, p_expanded1, p_expanded2)
+function regularize_grads(grads::Vector{Float64}, models::NTuple{<:Any, AbstractModel}; lambda=1.::Float64, regularization=:nothing::Symbol)
+    n = models[1].n
+    p_expanded_full = repeat(vcat([expand_params(model) for model in models]...), (n÷2)*2)
     if regularization == :l1
         l1 = sign.(p_expanded_full)
         grads += lambda * l1
@@ -185,6 +183,37 @@ function eval_grad(states::NTuple{2, ArrayReg}, models::NTuple{2, AbstractModel}
 end
 
 """
+    eval_grad(states::NTuple{2, ArrayReg}, models::NTuple{<:Any, AbstractModel}, cost::CircuitCost; lambda=1.0::Float64, regularization=:nothing::Symbol) -> Vector{Float64}
+
+Evaluates the gradient of the cost function for a pair of quantum states and models.
+
+# Arguments
+- `states::NTuple{2, ArrayReg}`: The tuple of quantum states.
+- `models::NTuple{<:Any, AbstractModel}`: The tuple of quantum models.
+- `cost::CircuitCost`: The cost function.
+- `lambda::Float64`: The regularization parameter, default is 1.0.
+- `regularization::Symbol`: The type of regularization (`:l1` or `:l2`), default is `:nothing`.
+
+# Returns
+- `Vector{Float64}`: The evaluated gradients.
+"""
+function eval_grad(states::NTuple{2, ArrayReg}, models::NTuple{<:Any, AbstractModel}, cost::CircuitCost; lambda=1.::Float64, regularization=:nothing::Symbol)
+    state1, state2 = states
+    n = models[1].n
+    n_models = length(models)
+    LCU = sum([model.circ for model in models])
+    circ_full = chain(2n, put(1:n => LCU^(n÷2)), put(n+1:2n => LCU^(n÷2)))
+    p_expanded_full = repeat(vcat([expand_params(model) for model in models]...), (n÷2)*2) # repeat the expanded parameters of the single unitaries the number of exponentiations (n_models) and for the registers (2)
+    dispatch!(circ_full, p_expanded_full)
+    _, grads = expect'(cost.cost(2n), join(state2, state1) => circ_full)
+    grads = convert.(Float64, grads)
+    grads = regularize_grads(grads, models; lambda=lambda, regularization=regularization)
+    m = length(p_expanded_full)÷n_models
+    avg_grads = sum([grads[1+(i-1)*m:i*m] for i in 1:n_models])
+    return avg_grads
+end
+
+"""
     eval_grad(states::NTuple{2, ArrayReg}, model::AbstractModel, cost::GeneralCost; epsilon=(π/2)::Float64, lambda=1.0::Float64, regularization=:nothing::Symbol) -> Vector{Float64}
 
 Evaluates the gradient of the general cost function for a pair of quantum states and a model.
@@ -243,13 +272,13 @@ function eval_grad(state::ArrayReg, models::NTuple{2, AbstractModel}, cost::Gene
 end
 
 """
-    eval_full_grad(data::AbstractData, model::Union{AbstractModel, NTuple{2, AbstractModel}}, cost::AbstractCost; lambda=1.0::Float64, regularization=:nothing::Symbol) -> Vector{Float64}
+    eval_full_grad(data::AbstractData, model::Union{AbstractModel, NTuple{<:Any, AbstractModel}}, cost::AbstractCost; lambda=1.0::Float64, regularization=:nothing::Symbol) -> Vector{Float64}
 
 Evaluates the full gradient of the cost function over a dataset for a given model or tuple of models.
 
 # Arguments
 - `data::AbstractData`: The dataset containing quantum states and corresponding labels.
-- `model::Union{AbstractModel, NTuple{2, AbstractModel}}`: The quantum model or tuple of models.
+- `model::Union{AbstractModel, NTuple{<:Any, AbstractModel}}`: The quantum model or tuple of models.
 - `cost::AbstractCost`: The cost function.
 - `lambda::Float64`: The regularization parameter, default is 1.0.
 - `regularization::Symbol`: The type of regularization (`:l1` or `:l2`), default is `:nothing`.
@@ -257,7 +286,7 @@ Evaluates the full gradient of the cost function over a dataset for a given mode
 # Returns
 - `Vector{Float64}`: The evaluated full gradients.
 """
-function eval_full_grad(data::AbstractData, model::Union{AbstractModel, NTuple{2, AbstractModel}}, cost::AbstractCost; lambda=1.::Float64, regularization=:nothing::Symbol)
+function eval_full_grad(data::AbstractData, model::Union{AbstractModel, NTuple{<:Any, AbstractModel}}, cost::AbstractCost; lambda=1.::Float64, regularization=:nothing::Symbol)
     all_grads = Vector{Vector{Float64}}()
     for i in eachindex(data.states)
         grad = eval_grad(data.states[i], model, cost; lambda=lambda, regularization=regularization)
@@ -268,7 +297,7 @@ function eval_full_grad(data::AbstractData, model::Union{AbstractModel, NTuple{2
     total_grads = sum(all_grads) / length(data.states)
     if typeof(model) <: Tuple
         n1 = length(expand_params(model[1]))
-        return vcat(reduce_params(model[1], total_grads[1:n1]), reduce_params(model[2], total_grads[n1+1:end]))
+        return vcat([reduce_params(model[i], total_grads[1+(i-1)*n1:i*n1]) for i in eachindex(model)]...)
     else
         return reduce_params(model, total_grads)
     end

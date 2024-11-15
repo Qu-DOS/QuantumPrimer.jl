@@ -1,15 +1,15 @@
 module QuantumPrimer
 
-using Yao
-using Random
-using Optimisers
-using LinearAlgebra
-using Statistics
+using BitBasis
 using Combinatorics
 using ForwardDiff
-using Kronecker
 using Graphs
-using BitBasis
+using Kronecker
+using LinearAlgebra
+using Optimisers
+using Random
+using Statistics
+using Yao
 
 include("Circuit.jl");
 include("Data.jl");
