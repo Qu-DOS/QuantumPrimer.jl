@@ -242,6 +242,37 @@ function eval_grad(states::NTuple{2, ArrayReg}, model::AbstractModel, cost::Gene
 end
 
 """
+    eval_grad(states::NTuple{2, ArrayReg}, model::AbstractModel, cost::CircuitCost; epsilon=(π/2)::Float64, lambda=1.0::Float64, regularization=:nothing::Symbol) -> Vector{Float64}
+
+Evaluates the gradient of the general cost function for a pair of quantum states and a model.
+
+# Arguments
+- `states::NTuple{2, ArrayReg}`: The tuple of quantum states.
+- `model::AbstractModel`: The quantum model.
+- `cost::CircuitCost`: The circuit cost function.
+- `epsilon::Float64`: The shift parameter, default is `π/2`.
+- `lambda::Float64`: The regularization parameter, default is 1.0.
+- `regularization::Symbol`: The type of regularization (`:l1` or `:l2`), default is `:nothing`.
+
+# Returns
+- `Vector{Float64}`: The evaluated gradients.
+"""
+function eval_grad(states::NTuple{2, ArrayReg}, model::AbstractModel, cost::CircuitCost; epsilon=(π/2)::Float64, lambda=1.::Float64, regularization=:nothing::Symbol)
+    state1, state2 = states
+    circ = model.circ
+    p_expanded = expand_params(model)
+    dispatch!(circ, p_expanded)
+    n = model.n
+    circ_full = chain(2n, put(1:n => circ), put(n+1:2n => circ))
+    _, grads= expect'(cost.cost(2n)*circ_swap_all(2n), join(state2, state1) => circ_full)
+    #grads = cost.cost(:grad, copy(state1) => circ, copy(state2) => circ; model=model)
+    grads = convert.(Float64, grads)
+    grads = grads[1:length(p_expanded)]
+    grads = regularize_grads(grads, model; lambda=lambda, regularization=regularization)
+    return grads
+end
+
+"""
     eval_grad(state::ArrayReg, models::NTuple{2, AbstractModel}, cost::GeneralCost; lambda=1.0::Float64, regularization=:nothing::Symbol) -> Vector{Float64}
 
 Evaluates the gradient of the general cost function for a quantum state and a tuple of models.
