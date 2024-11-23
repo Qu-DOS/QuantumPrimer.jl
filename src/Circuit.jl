@@ -548,6 +548,27 @@ function circ_hypergraph_state(vec::Vector{Int})
 end
 
 """
+    circ_hypergraph_state(n::Int, edges::Vector{Vector{Int}}) -> ChainBlock
+
+Creates a quantum circuit that prepares a hypergraph state from a list of edges.
+
+# Arguments
+- `n::Int`: The number of qubits in the circuit.
+- `edges::Vector{Vector{Int}}`: A vector of vectors, where each inner vector represents an (hyper-)edge in the hypergraph.
+
+# Returns
+- `ChainBlock`: The resulting quantum circuit.
+"""
+function circ_hypergraph_state(n::Int, edges::Vector{Vector{Int}})
+    circ = chain(n)
+    push!(circ, chain(n, put(i => H) for i in 1:n))
+    for edge in edges
+        push!(circ, chain(n, control(edge[1:end-1], edge[end] => Z)))
+    end
+    return circ
+end
+
+"""
     circ_swap_decomposed(n::Int, i::Int, j::Int) -> ChainBlock
 
 Creates a quantum circuit that performs a decomposed SWAP operation between qubits `i` and `j`.

@@ -216,24 +216,29 @@ Creates the Hamiltonian matrix for a given interaction matrix.
 # Returns
 - `Matrix{ComplexF64}`: The Hamiltonian matrix.
 """
-function create_hamiltonian_matrix(A::Array{Int, 2})
-    M_I2 = Matrix(I2)
-    M_X = Matrix(X)
-    M_Y = Matrix(Y)
-    M_Z = Matrix(Z)
-    n = size(A)[1]
-    if n == 0
+function create_hamiltonian_matrix(adjacency_matrix::Array{Int, 2}; hx::Real=0.0, hz::Real=0.0)
+    identity_matrix = Matrix(I2)
+    pauli_x = Matrix(X)
+    pauli_y = Matrix(Y)
+    pauli_z = Matrix(Z)
+    num_nodes = size(adjacency_matrix, 1)
+    if num_nodes == 0
         return Matrix{Int}(undef, 0, 0)
     end
-    res = zeros(ComplexF64, 2^n, 2^n)
-    for i in 1:n
-        for j in i+1:n
-            A[i, j] == 0 ? continue : nothing
-            P = [ii == i || ii == j ? M_Z : M_I2 for ii in 1:n]
-            res += A[i, j] * from_string_to_matrix(P)
+    hamiltonian_matrix = zeros(ComplexF64, 2^num_nodes, 2^num_nodes)
+    z_terms = zeros(ComplexF64, 2^num_nodes, 2^num_nodes)
+    x_terms = zeros(ComplexF64, 2^num_nodes, 2^num_nodes)
+    for i in 1:num_nodes
+        for j in i+1:num_nodes
+            if adjacency_matrix[i, j] != 0
+                pauli_product = [k == i || k == j ? pauli_z : identity_matrix for k in 1:num_nodes]
+                hamiltonian_matrix += adjacency_matrix[i, j] * from_string_to_matrix(pauli_product)
+            end
         end
+        z_terms += hz * from_string_to_matrix([k == i ? pauli_z : identity_matrix for k in 1:num_nodes])
+        x_terms += hx * from_string_to_matrix([k == i ? pauli_x : identity_matrix for k in 1:num_nodes])
     end
-    return -res
+    return -hamiltonian_matrix - z_terms - x_terms
 end
 
 """
