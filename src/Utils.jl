@@ -1,9 +1,6 @@
 export haar_random_unitary,
        wasserstein_distance,
        KL_divergence,
-       skewness,
-       kurtosis,
-       std_moment,
        density_matrix_from_vector,
        register_from_vector,
        pauli_decomposition
@@ -78,64 +75,6 @@ function KL_divergence(p::Vector{Float64}, q::Vector{Float64})
         end
     end
     return sum(p .* log.(p ./ q))
-end
-
-"""
-    skewness(vec::Vector{Float64}) -> Float64
-
-Computes the skewness of a given vector.
-
-# Arguments
-- `vec::Vector{Float64}`: The input vector.
-
-# Returns
-- `Float64`: The skewness of the vector.
-"""
-function skewness(vec::Vector{Float64})
-    return std_moment(3, vec)
-end
-
-"""
-    kurtosis(vec::Vector{Float64}) -> Float64
-
-Computes the kurtosis of a given vector.
-
-# Arguments
-- `vec::Vector{Float64}`: The input vector.
-
-# Returns
-- `Float64`: The kurtosis of the vector.
-"""
-function kurtosis(vec::Vector{Float64})
-    return std_moment(4, vec)
-end
-
-"""
-    std_moment(k::Int, vec::Vector{Float64}) -> Float64
-
-Computes the k-th standardized moment of a given vector.
-
-# Arguments
-- `k::Int`: The order of the moment (must be at least 3).
-- `vec::Vector{Float64}`: The input vector.
-
-# Returns
-- `Float64`: The k-th standardized moment of the vector.
-
-# Errors
-- An error if `k` is less than 3.
-"""
-function std_moment(k::Int, vec::Vector{Float64})
-    k < 3 && error("Moment must be at least 3. Use mean and std for lower moments.")
-    n = length(vec)
-    mean_v = mean(vec)
-    std_v = std(vec)
-    bessel_correction = n
-    for i in 1:k-1
-        bessel_correction /= (n - i)
-    end
-    moment = sum(((x - mean_v) / std_v)^k for x in vec)
-    return bessel_correction * moment
 end
 
 """
