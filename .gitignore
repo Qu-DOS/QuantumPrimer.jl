@@ -1,6 +1,8 @@
-/Manifest.toml
-/docs/Manifest.toml
 /docs/build/
 /data/
+/personal/
+
+/Manifest.toml
+/docs/Manifest.toml
 /notebooks/*.h5
 /notebooks/*.keras
