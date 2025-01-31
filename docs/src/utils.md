@@ -7,4 +7,6 @@ KL_divergence
 density_matrix_from_vector
 register_from_vector
 pauli_decomposition
+pauli_decomposition_kronecker
+save_circuit_to_txt
 ```

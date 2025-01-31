@@ -3,7 +3,9 @@ export haar_random_unitary,
        KL_divergence,
        density_matrix_from_vector,
        register_from_vector,
-       pauli_decomposition
+       pauli_decomposition,
+       pauli_decomposition_kronecker,
+       save_circuit_to_txt
 
 """
     haar_random_unitary(n::Int) -> Matrix{ComplexF64}
@@ -154,4 +156,56 @@ function pauli_decomposition(matrix::Union{ChainBlock, Matrix{ComplexF64}, Matri
         coefficient !=0 ? res[i] = real(coefficient) : nothing
     end
     return res
+end
+
+"""
+    pauli_decomposition_kronecker(matrix::Union{ChainBlock, Matrix{ComplexF64}, Matrix{T}} where T<:Real)
+
+Decompose a matrix into a dictionary of Pauli strings using the package Kronecker.
+
+# Arguments
+- `matrix::Union{ChainBlock, Matrix{ComplexF64}, Matrix{T}} where T<:Real`: The input matrix to be decomposed. The matrix must be square with dimensions 2^n x 2^n.
+
+# Returns
+- A dictionary where the keys are vectors of integers representing Pauli strings, and the values are the corresponding coefficients.
+"""
+function pauli_decomposition_kronecker(matrix::Union{ChainBlock, Matrix{ComplexF64}, Matrix{T}} where T<:Real)
+    n = trunc(Int, log2(size(matrix, 1)))
+    if n != log2(size(matrix, 1))
+        throw(ArgumentError("Matrix must be square and have dimensions 2^n x 2^n"))
+    end
+    Paulis = [0.5*I2, 0.5*X, 0.5*Y, 0.5*Z]
+    repeated_vector = repeat([0, 1, 2, 3], outer=n)
+    res = Dict{Vector{Int}, Float64}()
+    matrix = Matrix(matrix)
+    C = similar(matrix)
+    for i in multiset_permutations(repeated_vector, n)
+        P = Kronecker.kronecker([Matrix(Paulis[i[j]+1]) for j=1:n]...)
+        mul!(C, P, matrix)
+        coefficient = tr(C)
+        if coefficient != 0
+            res[i] = real(coefficient)
+        end
+    end
+    return res
+end
+
+"""
+    save_circuit_to_txt(circuit::AbstractBlock; filename::String="output.txt")
+
+Save a quantum circuit to a text file as a console output.
+
+# Arguments
+- `circuit::AbstractBlock`: The quantum circuit to be saved.
+- `filename::String="yao_circuit.txt"`: The name of the file to save the circuit to. Defaults to "yao_circuit.txt".
+
+# Returns
+- Nothing. The function writes the circuit to the specified file.
+"""
+function save_circuit_to_txt(circuit::AbstractBlock; filename::String="yao_circuit.txt")
+    open(filename, "w") do io
+        redirect_stdout(io) do
+            println(circuit)
+        end
+    end
 end
