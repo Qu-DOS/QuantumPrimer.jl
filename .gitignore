@@ -1,8 +1,7 @@
 /docs/build/
 /data/
 /personal/
+/private/
 
 /Manifest.toml
 /docs/Manifest.toml
-/notebooks/*.h5
-/notebooks/*.keras
