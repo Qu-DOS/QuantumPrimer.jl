@@ -5,7 +5,9 @@ export haar_random_unitary,
        register_from_vector,
        pauli_decomposition,
        pauli_decomposition_kronecker,
-       save_circuit_to_txt
+       save_circuit_to_txt,
+       normalize_vector,
+       prepare_dos_encoded_state
 
 """
     haar_random_unitary(n::Int) -> Matrix{ComplexF64}
@@ -207,5 +209,61 @@ function save_circuit_to_txt(circuit::AbstractBlock; filename::String="yao_circu
         redirect_stdout(io) do
             println(circuit)
         end
+    end
+end
+
+"""
+    normalize_vector(vector::Vector{T} where T <: Number) -> Vector{T}
+
+Normalize a vector by dividing each element by the vector's Euclidean norm.
+
+# Arguments
+- `vector::Vector{T} where T <: Number`: The input vector to be normalized.
+
+# Returns
+- `Vector{T}`: The normalized vector.
+
+# Example
+```julia
+v = [3.0, 4.0]
+normalize_vector(v)  # returns [0.6, 0.8]
+"""
+function normalize_vector(vector::Vector{T} where T <: Number)
+    return vector / sqrt(sum(abs2, vector))
+end
+
+"""
+    prepare_dos_encoded_state(unitary::Union{AbstractMatrix, AbstractBlock}, n_times::Int; nshots::Int=1000, extended_output::Bool=false, focussed_output::Bool=true)
+
+Prepare a state for the DOS algorithm by encoding a unitary matrix into a quantum state.
+
+# Arguments
+- `unitary::Union{AbstractMatrix, AbstractBlock}`: The unitary matrix to be encoded.
+- `n_times::Int`: The number of times to apply the unitary matrix.
+- `nshots::Int=1000`: The number of shots to use for the measurement.
+- `extended_output::Bool=false`: If `true`, the function returns the state and the measurement counts. If `false`, the function returns only the state.
+- `focussed_output::Bool=true`: If `true`, the function returns the state with the ancilla qubits removed. If `false`, the function returns the full state.
+
+# Returns
+- If `extended_output` is `true`, the function returns a tuple `(dos_state, counts_register_after_qpe)`. If `extended_output` is `false`, the function returns only `dos_state`.
+"""
+function prepare_dos_encoded_state(unitary::Union{AbstractMatrix, AbstractBlock}, n_times::Int; nshots::Int=1000, extended_output::Bool=false, focussed_output::Bool=true)
+     if typeof(unitary) <: AbstractBlock
+        unitary = Matrix(unitary)
+    end
+    n_qubits = Int(log2(size(unitary, 1)))
+    if n_qubits != log2(size(unitary, 1))
+        throw(ArgumentError("The size of the unitary matrix must be a power of 2."))
+    end
+    all_n = n_times + 2n_qubits # include the ancilla qubits for purification
+    initial_state = zero_state(all_n)
+    initial_state |> circ_append_ancillas(circ_purified_maximally_mixed(n_qubits), n_times; pos_ancillas=:top) |> circ_append_ancillas(circ_qpe(n_times, unitary; reverse_qubits=false), n_qubits) |> chain(all_n, put(1:n_times => circ_reverse_order(n_times))) # reverse the readout if using Yao convention
+    meas_register_after_qpe = measure(initial_state, 1:n_times; nshots=nshots)
+    counts_register_after_qpe = [count(x->x==i, meas_register_after_qpe) for i in 0:2^n_times-1] / nshots
+    dos_state = focussed_output ? focus!(initial_state, 1:n_times) : initial_state
+    if extended_output
+        return dos_state, counts_register_after_qpe
+    else
+        return dos_state
     end
 end

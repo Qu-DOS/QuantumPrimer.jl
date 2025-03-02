@@ -22,6 +22,8 @@ circ_Zn
 circ_Xsum
 circ_Ysum
 circ_Zsum
+circ_Hn
+circ_CNOT_2regs
 ```
 
 ## Convolutional circuits
@@ -69,4 +71,18 @@ circ_LCU
 ## Haar random unitary
 ```@docs
 circ_haar_random_unitary
+```
+
+## QPE circuits
+```@docs
+circ_phase_encoding
+circ_qft
+circ_qpe
+```
+
+## Utility circuits
+```@docs
+circ_purified_maximally_mixed
+circ_append_ancillas
+circ_reverse_order
 ```

@@ -9,4 +9,6 @@ register_from_vector
 pauli_decomposition
 pauli_decomposition_kronecker
 save_circuit_to_txt
+normalize_vector
+prepare_dos_encoded_state
 ```

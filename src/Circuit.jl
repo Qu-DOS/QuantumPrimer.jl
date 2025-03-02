@@ -18,6 +18,8 @@ export circ_gate_single,
        circ_Xsum,
        circ_Ysum,
        circ_Zsum,
+       circ_Hn,
+       circ_CNOT_2regs,
        circ_Ry_simple_conv,
        circ_Ry_conv,
        circ_SU4_conv,
@@ -36,7 +38,13 @@ export circ_gate_single,
        circ_destructive_swap_test,
        circ_obs_times_swap,
        circ_LCU,
-       circ_haar_random_unitary
+       circ_haar_random_unitary,
+       circ_purified_maximally_mixed,
+       circ_phase_encoding,
+       circ_qft,
+       circ_qpe,
+       circ_append_ancillas,
+       circ_reverse_order
 
 """
     circ_gate_single(n::Int, i::Int, gate::ConstantGate) -> ChainBlock
@@ -354,6 +362,32 @@ Creates a quantum circuit with the sum of Z gates applied to all qubits.
 - `ChainBlock`: The resulting quantum circuit.
 """
 circ_Zsum(n::Int) = sum(chain(n, put(i=>Z) for i=1:n))
+
+"""
+    circ_Hn(n::Int) -> ChainBlock
+
+Creates a quantum circuit with Hadamard gates applied to all qubits.
+
+# Arguments
+- `n::Int`: The total number of qubits.
+
+# Returns
+- `ChainBlock`: The resulting quantum circuit.
+"""
+circ_Hn(n::Int) = chain(n, put(i=>H) for i=1:n)
+
+"""
+    circ_CNOT_2regs(n::Int) -> ChainBlock
+
+Creates a quantum circuit with CNOT gates applied between two registers.
+
+# Arguments
+- `n::Int`: The total number of qubits in each register.
+
+# Returns
+- `ChainBlock`: The resulting quantum circuit.
+"""
+circ_CNOT_2regs(n::Int) = chain(n, control(i, i+n÷2 => X) for i=1:n÷2)
 
 """
     circ_Ry_simple_conv(n::Int, i::Int, j::Int) -> ChainBlock
@@ -712,4 +746,186 @@ function circ_haar_random_unitary(n::Int)
     circ = chain(n)
     push!(circ, matblock(U))
     return circ
+end
+
+"""
+    circ_purified_maximally_mixed(n::Int) -> ChainBlock
+
+Creates a quantum circuit that prepares a purified maximally mixed state.
+
+# Arguments
+- `n::Int`: The number of qubits in each register.
+
+# Returns
+- `ChainBlock`: The resulting quantum circuit.
+"""
+function circ_purified_maximally_mixed(n::Int)
+    reg1 = 1:n
+    reg2 = n+1:2n
+    circ = chain(2n,
+        put(reg1 => circ_Hn(n)),
+        put(vcat(reg1, reg2) => circ_CNOT_2regs(2n)))
+    return circ
+end
+
+"""
+    circ_phase_encoding(n::Int, unitary_block::AbstractBlock; reverse_qubits::Bool=false) -> ChainBlock
+
+Creates a quantum circuit for phase encoding using a unitary block.
+
+# Arguments
+- `n::Int`: The number of qubits for the time register.
+- `unitary_block::AbstractBlock`: The unitary block to be applied.
+- `reverse_qubits::Bool`: Whether to reverse the order of qubits.
+
+# Returns
+- `ChainBlock`: The resulting quantum circuit.
+"""
+function circ_phase_encoding(n::Int, unitary_block::AbstractBlock; reverse_qubits::Bool=false)
+    reg_times = 1:n
+    n_eigvec = nqubits(unitary_block)
+    reg_eigvec = n+1:n+n_eigvec
+    if !reverse_qubits
+        circ_control = chain(n+n_eigvec, control(i+1, reg_eigvec => unitary_block^(2^i)) for i=0:n-1)
+    else
+        circ_control = chain(n+n_eigvec, control(n-i, reg_eigvec => unitary_block^(2^i)) for i=0:n-1)
+    end
+    circ = chain(n+n_eigvec,
+                 subroutine(circ_Hn(n), reg_times),
+                 circ_control)
+    return circ
+end
+
+"""
+    circ_phase_encoding(n::Int, unitary_matrix::AbstractMatrix; reverse_qubits::Bool=false) -> ChainBlock
+
+Creates a quantum circuit for phase encoding using a unitary matrix.
+
+# Arguments
+- `n::Int`: The number of qubits for the time register.
+- `unitary_matrix::AbstractMatrix`: The unitary matrix to be applied.
+- `reverse_qubits::Bool`: Whether to reverse the order of qubits.
+
+# Returns
+- `ChainBlock`: The resulting quantum circuit.
+"""
+function circ_phase_encoding(n::Int, unitary_matrix::AbstractMatrix; reverse_qubits::Bool=false)
+    n_eigvec = Int(log2(size(unitary_matrix, 1)))
+    if n_eigvec != log2(size(unitary_matrix, 1))
+        throw(ArgumentError("The size of the unitary matrix must be a power of 2."))
+    end
+    reg_times = 1:n
+    reg_eigvec = n+1:n+n_eigvec
+    if !reverse_qubits
+        circ_control = chain(n+n_eigvec, control(i+1, reg_eigvec => matblock(unitary_matrix^(2^i))) for i=0:n-1)
+    else
+        circ_control = chain(n+n_eigvec, control(n-i, reg_eigvec => matblock(unitary_matrix^(2^i))) for i=0:n-1)
+    end
+    circ = chain(n+n_eigvec,
+                 subroutine(circ_Hn(n), reg_times),
+                 circ_control)
+    return circ
+end
+
+"""
+    circ_qft(n::Int; reverse_qubits::Bool=false) -> ChainBlock
+
+Creates a quantum circuit for the Quantum Fourier Transform (QFT).
+
+# Arguments
+- `n::Int`: The number of qubits.
+- `reverse_qubits::Bool`: Whether to reverse the order of qubits.
+
+# Returns
+- `ChainBlock`: The resulting quantum circuit.
+"""
+function circ_qft(n::Int; reverse_qubits::Bool=false)
+    circ = chain(n)
+    if reverse_qubits
+        push!(circ, circ_reverse_order(n))
+    end
+    for j in 1:n
+        push!(circ, put(j=>H))
+        for k in (j+1):n
+            angle = 2π / 2^(k-j + 1)
+            push!(circ, control(k, j=>shift(angle)))
+        end
+    end
+    if reverse_qubits
+        push!(circ, circ_reverse_order(n))
+    end
+    return circ
+end
+
+"""
+    circ_qpe(n::Int, unitary_matrix::Union{AbstractMatrix, AbstractBlock}; reverse_qubits::Bool=false) -> ChainBlock
+
+Creates a quantum circuit for Quantum Phase Estimation (QPE).
+
+# Arguments
+- `n::Int`: The number of qubits for the time register.
+- `unitary_matrix::Union{AbstractMatrix, AbstractBlock}`: The unitary matrix to be applied.
+- `reverse_qubits::Bool`: Whether to reverse the order of qubits.
+
+# Returns
+- `ChainBlock`: The resulting quantum circuit.
+"""
+function circ_qpe(n::Int, unitary_matrix::Union{AbstractMatrix, AbstractBlock}; reverse_qubits::Bool=false)
+    if typeof(unitary_matrix) <: AbstractBlock
+        unitary_matrix = Matrix(unitary_matrix)
+    end
+    n_eigvec = Int(log2(size(unitary_matrix, 1)))
+    if n_eigvec != log2(size(unitary_matrix, 1))
+        throw(ArgumentError("The size of the unitary matrix must be a power of 2."))
+    end
+    reg_times = 1:n
+    reg_eigvec = n+1:n+n_eigvec
+    circ = chain(n+n_eigvec,
+                 circ_phase_encoding(n, unitary_matrix; reverse_qubits=reverse_qubits),
+                 subroutine(circ_qft(n; reverse_qubits=reverse_qubits)', reg_times))
+    return circ
+end
+
+"""
+    circ_append_ancillas(circ::AbstractBlock, n_ancillas::Int; pos_ancillas::Symbol=:bottom) -> ChainBlock
+
+Appends ancilla qubits to a quantum circuit.
+
+# Arguments
+- `circ::AbstractBlock`: The quantum circuit.
+- `n_ancillas::Int`: The number of ancilla qubits.
+- `pos_ancillas::Symbol`: The position of the ancilla qubits (`:bottom` or `:top`).
+
+# Returns
+- `ChainBlock`: The resulting quantum circuit with ancilla qubits.
+"""
+function circ_append_ancillas(circ::AbstractBlock, n_ancillas::Int; pos_ancillas::Symbol=:bottom)
+    n_qubits = nqubits(circ)
+    if pos_ancillas == :bottom
+        reg_main = 1:n_qubits
+        reg_ancilla = n_qubits+1:n_qubits+n_ancillas
+        reg_all = vcat(reg_main, reg_ancilla)
+    elseif pos_ancillas == :top
+        reg_main = n_ancillas+1:n_ancillas+n_qubits
+        reg_ancilla = 1:n_ancillas
+        reg_all = vcat(reg_ancilla, reg_main)
+    end
+    circ = chain(n_qubits+n_ancillas,
+        put(reg_main => circ))
+    return circ
+end
+
+"""
+    circ_reverse_order(n::Int) -> ChainBlock
+
+Creates a quantum circuit that reverses the order of qubits using SWAP gates.
+
+# Arguments
+- `n::Int`: The total number of qubits.
+
+# Returns
+- `ChainBlock`: The resulting quantum circuit that reverses the order of the qubits.
+"""
+function circ_reverse_order(n::Int)
+    return chain(n, put((i, n+1-i) => SWAP) for i in 1:n÷2)
 end
