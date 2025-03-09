@@ -9,6 +9,7 @@ using LinearAlgebra
 using Optimisers
 using Random
 using Statistics
+using StatsBase
 using Yao
 
 include("Circuit.jl");
