@@ -233,7 +233,7 @@ function normalize_vector(vector::Vector{T} where T <: Number)
 end
 
 """
-    prepare_dos_encoded_state(unitary::Union{AbstractMatrix, AbstractBlock}, n_times::Int; nshots::Int=1000, extended_output::Bool=false, focussed_output::Bool=true)
+    prepare_dos_encoded_state(unitary::Union{AbstractMatrix, AbstractBlock}, n_times::Int; nshots::Int=1000, return_counts::Bool=false, focussed_output::Bool=true)
 
 Prepare a state for the DOS algorithm by encoding a unitary matrix into a quantum state.
 
@@ -241,14 +241,14 @@ Prepare a state for the DOS algorithm by encoding a unitary matrix into a quantu
 - `unitary::Union{AbstractMatrix, AbstractBlock}`: The unitary matrix to be encoded.
 - `n_times::Int`: The number of times to apply the unitary matrix.
 - `nshots::Int=1000`: The number of shots to use for the measurement.
-- `extended_output::Bool=false`: If `true`, the function returns the state and the measurement counts. If `false`, the function returns only the state.
+- `return_counts::Bool=false`: If `true`, the function returns the state and the measurement counts. If `false`, the function returns only the state.
 - `focussed_output::Bool=true`: If `true`, the function returns the state with the ancilla qubits removed. If `false`, the function returns the full state.
 
 # Returns
-- If `extended_output` is `true`, the function returns a tuple `(dos_state, counts_register_after_qpe)`. If `extended_output` is `false`, the function returns only `dos_state`.
+- If `return_counts` is `true`, the function returns a tuple `(dos_state, counts_register_after_qpe)`. If `return_counts` is `false`, the function returns only `dos_state`.
 """
-function prepare_dos_encoded_state(unitary::Union{AbstractMatrix, AbstractBlock}, n_times::Int; nshots::Int=1000, extended_output::Bool=false, focussed_output::Bool=true)
-     if typeof(unitary) <: AbstractBlock
+function prepare_dos_encoded_state(unitary::Union{AbstractMatrix, AbstractBlock}, n_times::Int; nshots::Int=1000, return_counts::Bool=false, focussed_output::Bool=true)
+    if typeof(unitary) <: AbstractBlock
         unitary = Matrix(unitary)
     end
     n_qubits = Int(log2(size(unitary, 1)))
@@ -261,7 +261,7 @@ function prepare_dos_encoded_state(unitary::Union{AbstractMatrix, AbstractBlock}
     meas_register_after_qpe = measure(initial_state, 1:n_times; nshots=nshots)
     counts_register_after_qpe = [count(x->x==i, meas_register_after_qpe) for i in 0:2^n_times-1] / nshots
     dos_state = focussed_output ? focus!(initial_state, 1:n_times) : initial_state
-    if extended_output
+    if return_counts
         return dos_state, counts_register_after_qpe
     else
         return dos_state
